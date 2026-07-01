@@ -12,25 +12,26 @@ export default function Login() {
 
   async function signIn() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setMsg(error.message); else router.push('/practice');
+    if (error) setMsg(error.message); else router.push('/start');
   }
   async function signUp() {
     const { error } = await supabase.auth.signUp({ email, password });
-    setMsg(error ? error.message : 'Account created. Confirm via email if required, then sign in.');
+    setMsg(error ? error.message : 'Account created — now tap Sign in.');
   }
 
   return (
-    <div style={{ maxWidth: 360, margin: '80px auto', padding: 16 }}>
-      <h1>Debate Practice</h1>
-      <input placeholder="email" value={email} onChange={(e) => setEmail(e.target.value)}
-        style={{ width: '100%', padding: 8, margin: '8px 0' }} />
-      <input placeholder="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-        style={{ width: '100%', padding: 8, margin: '8px 0' }} />
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={signIn}>Sign in</button>
-        <button onClick={signUp}>Sign up</button>
+    <div className="center">
+      <div className="auth">
+        <h1>Debate Practice</h1>
+        <p className="sub">Spar with an AI opponent, then get judged and coached.</p>
+        <input className="field" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input className="field" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+          <button className="btn btn-primary" onClick={signIn}>Sign in</button>
+          <button className="btn" onClick={signUp}>Sign up</button>
+        </div>
+        {msg && <p className="err">{msg}</p>}
       </div>
-      {msg && <p style={{ color: '#a00' }}>{msg}</p>}
     </div>
   );
 }
