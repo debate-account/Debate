@@ -13,15 +13,20 @@ export type Drill = {
 };
 
 const WEIGHING_MECHANISMS =
-  'magnitude (how much is at stake), probability (how likely), timeframe (how soon), ' +
-  'reversibility (can it be undone), scope (how many are affected), and proximity/vulnerability (who is affected).';
+  'Prerequisite (your argument must happen or be solved first before theirs can even exist or be solved); ' +
+  'Magnitude (the sheer size, scale, or number of people affected by the impact); ' +
+  'Probability (the statistical likelihood the impact will actually happen); ' +
+  'Timeframe (how fast the impact occurs — immediate harms outweigh distant ones); ' +
+  'Reversibility (whether the damage is permanent or can be fixed and undone later); ' +
+  'Scope (the depth, severity, or systemic intensity of the harm on a specific group).';
 
+// The BUTTON refutation checklist.
 const REBUTTAL_WAYS =
-  'DENY (contradiction, false premise, or unsupported claim — no evidence needed); ' +
-  "REVERSE / TURN (the point actually helps our side); " +
-  'MINIMIZE (less likely, smaller, or slower than claimed — attack the link/warrant); ' +
-  'OUTWEIGH (grant it, but our impact matters more under the framework); ' +
-  'plus non-uniqueness (it happens anyway) and alternative cause.';
+  'No Brink (B — the opponent\'s link or internal cause is too weak to create their claimed impact); ' +
+  'Non-Unique (U — the feared impact will happen regardless of whether their side wins); ' +
+  'Link Turn (T — their cause and effect are backwards; their action leads to the exact opposite of what they want); ' +
+  'Impact Turn (T — concede the action occurs, but argue the outcome is actually bad, or vice-versa); ' +
+  'Outweighs (O — concede it might be true, but your side\'s impacts matter more, e.g. bigger scale or faster timeline).';
 
 export const DRILLS: Drill[] = [
   {
@@ -43,14 +48,14 @@ export const DRILLS: Drill[] = [
     id: 'rebuttal',
     name: 'Rebuttal',
     tag: 'Refute a contention',
-    blurb: 'Get a motion and one contention, then refute it. The coach scores your structure and angle of attack.',
+    blurb: 'Get a motion and one contention, then refute it. The coach scores your structure and your BUTTON angle of attack.',
     brief:
       'This is a REBUTTAL DRILL — not a full debate round. Act as a focused coach.\n' +
       '1. Present ONE motion and ONE contention to refute — a claim, its warrant, and an impact — in a few sentences.\n' +
       '2. Ask the debater to refute it.\n' +
       '3. When they respond, evaluate the refutation on TWO axes:\n' +
       '   - Structure (4-step): They say… / But… / Because (reasoning + example)… / Therefore (impact comparison). Note any step that is missing or thin.\n' +
-      `   - Angle of attack: ${REBUTTAL_WAYS} Say which angle(s) they used and the single strongest line of attack they missed.\n` +
+      `   - Angle of attack — the BUTTON checklist: ${REBUTTAL_WAYS} Say which BUTTON angle(s) they used and the single strongest one they missed.\n` +
       '4. Give ONE concrete improvement, score the refutation out of 10, and offer another rep.\n' +
       'Keep it tight. Do NOT run a full round or deliver the opposing constructive.',
     kickoff: 'Start a rebuttal drill. Give me a motion and one contention to refute, then wait for my refutation.',
