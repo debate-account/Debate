@@ -81,6 +81,10 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01e
 .choice p{color:var(--muted);font-size:14px;margin:0;line-height:1.5}
 .choice .go{margin-top:16px;font-weight:600;font-size:14px}
 .choice.prep .go{color:var(--prep)} .choice.impromptu .go{color:var(--impromptu)}
+.choice.drill .edge{background:#0a8f5b}
+.choice.drill .tag{background:var(--field);color:#0a8f5b}
+.choice.drill .go{color:#0a8f5b}
+.drills-head{font-size:26px;margin:8px 0 2px}
 
 .portal{display:flex;flex-direction:column;height:100dvh;max-width:820px;margin:0 auto}
 .topbar{display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--line);

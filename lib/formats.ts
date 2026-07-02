@@ -21,6 +21,10 @@ export type RoundFormat = {
   desc?: string;        // other: the user's custom description
   speeches: string[];
   criteria?: string[];  // judging criteria (editable in the briefing)
+  drill?: boolean;      // skill drill instead of a full round
+  brief?: string;       // drill: system-prompt brief
+  kickoff?: string;     // drill: message that starts it
+  intro?: string;       // drill: pre-drill description
 };
 
 // Default judging axes — aligned with the judge's SCORES (content/style/strategy).

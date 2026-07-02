@@ -39,6 +39,7 @@ function beep() {
 
 export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest: boolean }) {
   const isImpromptu = format.id === 'nydl' && format.mode === 'impromptu';
+  const isDrill = !!format.drill;
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -233,6 +234,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
   }
 
   function startRound() {
+    if (isDrill) { send(format.kickoff || 'Start the drill.'); return; }
     if (format.id === 'nydl') {
       send(isImpromptu
         ? 'IMPROMPTU'
@@ -271,14 +273,20 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
       </div>
 
       <div className="modebar">
-        {MODES.map((m) => (
+        {!isDrill && MODES.map((m) => (
           <button key={m.key} className={`mode ${m.cls}`} onClick={() => send(m.key)} disabled={busy}>{m.label}</button>
         ))}
-        <button className="mode" onClick={saveRound} disabled={busy || messages.length === 0} style={{ marginLeft: 'auto' }}>Save round</button>
+        <button className="mode" onClick={saveRound} disabled={busy || messages.length === 0} style={{ marginLeft: 'auto' }}>{isDrill ? 'Save drill' : 'Save round'}</button>
       </div>
 
       <div className="thread" ref={threadRef}>
-        {messages.length === 0 ? (
+        {messages.length === 0 && isDrill ? (
+          <div className="empty">
+            <h2>{format.name} drill</h2>
+            <p>{format.intro}</p>
+            <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={startRound} disabled={busy}>Start drill</button>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="empty briefing">
             <h2>{isImpromptu ? 'Impromptu round' : `${format.name} round`}</h2>
             <p>Here&rsquo;s how this round runs — change anything before you start.</p>
@@ -315,20 +323,22 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
           >
             {listening ? '● Recording — tap to finish & send' : '🎤 Deliver your speech'}
           </button>
-          <div className="timer">
-            {timers.length > 0 ? (
-              <>
-                <select value={speechIdx} onChange={(e) => { setRunning(false); setSpeechIdx(Number(e.target.value)); }}>
-                  {timers.map((t, i) => <option key={i} value={i}>{t.label} · {fmtClock(t.seconds)}</option>)}
-                </select>
-                <span className={`clock ${done ? 'done' : ''}`}>{done ? 'Time!' : fmtClock(remaining)}</span>
-                <button onClick={toggleTimer}>{running ? 'Pause' : 'Start'}</button>
-                <button onClick={resetTimer}>Reset</button>
-              </>
-            ) : (
-              <span className="voicenote">Add speech times in the briefing to use the timer.</span>
-            )}
-          </div>
+          {!isDrill && (
+            <div className="timer">
+              {timers.length > 0 ? (
+                <>
+                  <select value={speechIdx} onChange={(e) => { setRunning(false); setSpeechIdx(Number(e.target.value)); }}>
+                    {timers.map((t, i) => <option key={i} value={i}>{t.label} · {fmtClock(t.seconds)}</option>)}
+                  </select>
+                  <span className={`clock ${done ? 'done' : ''}`}>{done ? 'Time!' : fmtClock(remaining)}</span>
+                  <button onClick={toggleTimer}>{running ? 'Pause' : 'Start'}</button>
+                  <button onClick={resetTimer}>Reset</button>
+                </>
+              ) : (
+                <span className="voicenote">Add speech times in the briefing to use the timer.</span>
+              )}
+            </div>
+          )}
           {ttsSupported && messages.length > 0 && (
             <button className="replay" title="Replay last reply"
               onClick={() => { const last = [...messages].reverse().find((x) => x.role === 'assistant'); if (last) speak(last.content); }}>
