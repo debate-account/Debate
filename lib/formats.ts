@@ -43,7 +43,14 @@ export const FORMATS: Format[] = [
     name: 'NYDL / ESU',
     tag: 'Home league',
     blurb: 'New York Debate League (English-Speaking Union) style. Choose a prepared or impromptu round next.',
-    speeches: ['Prepared or impromptu — pick after selecting'],
+    speeches: [
+      '1st Proposition — 5 min',
+      'Cross-examination — 2 min',
+      '1st Opposition — 5 min',
+      'Cross-examination — 2 min',
+      '2nd Proposition — 5 min',
+      '2nd Opposition — 5 min',
+    ],
     cls: 'prep',
     modes: [
       { id: 'prepared', name: 'Prepared round', blurb: 'You know the motion ahead of time. Build a case with contentions and real evidence, then defend it against a full opposing bench.' },
