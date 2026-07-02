@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useSettings } from '@/components/Settings';
+import { renderMarkdown, stripMeta, parseRoundMeta } from '@/lib/markdown';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 const MODES = [
@@ -11,40 +12,9 @@ const MODES = [
   { key: 'COACH', label: 'Coach', cls: 'coach' },
 ];
 
-// Minimal, safe Markdown -> HTML for the opponent/judge/coach replies.
-function escapeHtml(s: string) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-function inline(s: string) {
-  return s
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/__([^_]+)__/g, '<strong>$1</strong>')
-    .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>');
-}
-function renderMarkdown(src: string) {
-  const lines = escapeHtml(src).split('\n');
-  let html = '';
-  let list: 'ul' | 'ol' | null = null;
-  const closeList = () => { if (list) { html += `</${list}>`; list = null; } };
-  for (const raw of lines) {
-    const line = raw.trimEnd();
-    const h = line.match(/^(#{1,3})\s+(.*)$/);
-    const ul = line.match(/^\s*[-*]\s+(.*)$/);
-    const ol = line.match(/^\s*\d+\.\s+(.*)$/);
-    if (h) { closeList(); const lvl = Math.min(h[1].length + 2, 5); html += `<h${lvl}>${inline(h[2])}</h${lvl}>`; }
-    else if (ul) { if (list !== 'ul') { closeList(); html += '<ul>'; list = 'ul'; } html += `<li>${inline(ul[1])}</li>`; }
-    else if (ol) { if (list !== 'ol') { closeList(); html += '<ol>'; list = 'ol'; } html += `<li>${inline(ol[1])}</li>`; }
-    else if (line === '') { closeList(); }
-    else { closeList(); html += `<p>${inline(line)}</p>`; }
-  }
-  closeList();
-  return html;
-}
-
 // Strip markdown symbols so the AI voice reads clean prose.
 function toSpeech(s: string) {
-  return s.replace(/[#*_`>]/g, ' ').replace(/^\s*[-]\s+/gm, ' ').replace(/\s+/g, ' ').trim();
+  return stripMeta(s).replace(/[#*_`>]/g, ' ').replace(/^\s*[-]\s+/gm, ' ').replace(/\s+/g, ' ').trim();
 }
 function fmtClock(sec: number) {
   const m = Math.floor(sec / 60);
@@ -67,6 +37,9 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
   const taRef = useRef<HTMLTextAreaElement>(null);
   const recRef = useRef<any>(null);
   const baseTextRef = useRef('');
+  const keepListeningRef = useRef(false); // true while the user intends to keep speaking
+  const finalRef = useRef('');            // accumulated finalized transcript this session
+  const autoSendRef = useRef(false);      // voice mode sends the speech on stop
 
   // Detect browser capabilities after mount so the first client render matches
   // the server (both "unsupported"), avoiding a hydration mismatch.
@@ -92,6 +65,7 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
 
   // Stop any audio/recognition when unmounting.
   useEffect(() => () => {
+    keepListeningRef.current = false;
     try { recRef.current?.stop(); } catch {}
     if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
   }, []);
@@ -153,36 +127,61 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
     setBusy(false);
   }
 
-  // Web Speech recognition. autoSend=true sends the transcript on stop (voice mode);
-  // autoSend=false dictates into the composer (accessibility for typing).
+  // Continuous Web Speech recognition. Both flows accumulate a full transcript
+  // through pauses (a whole speech), showing it live in the composer:
+  //   autoSend=true  (voice mode)  — on stop, send the speech as the user's turn.
+  //   autoSend=false (dictation)   — on stop, leave it in the box to edit/send.
+  function stopListening() {
+    keepListeningRef.current = false;
+    try { recRef.current?.stop(); } catch {}
+  }
+
   function startListening(autoSend: boolean) {
     if (!speechSupported) return;
-    if (listening) { try { recRef.current?.stop(); } catch {} return; }
+    if (listening) { stopListening(); return; }
     const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    autoSendRef.current = autoSend;
+    baseTextRef.current = autoSend ? '' : (input ? input + ' ' : '');
+    finalRef.current = '';
+    keepListeningRef.current = true;
+
     const r = new SR();
-    r.continuous = !autoSend;
+    r.continuous = true;
     r.interimResults = true;
     r.lang = 'en-US';
     recRef.current = r;
-    baseTextRef.current = autoSend ? '' : (input ? input + ' ' : '');
-    let latest = '';
+
     r.onresult = (e: any) => {
-      let txt = '';
-      for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript;
-      latest = txt;
-      if (!autoSend) { setInput(baseTextRef.current + txt); requestAnimationFrame(autosize); }
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const res = e.results[i];
+        if (res.isFinal) finalRef.current += res[0].transcript + ' ';
+        else interim += res[0].transcript;
+      }
+      setInput((baseTextRef.current + finalRef.current + interim).replace(/\s+/g, ' ').trimStart());
+      requestAnimationFrame(autosize);
     };
-    r.onerror = () => setListening(false);
+    r.onerror = (ev: any) => {
+      // Mic blocked or unavailable — stop for good and let the user know.
+      if (ev?.error === 'not-allowed' || ev?.error === 'service-not-allowed' || ev?.error === 'audio-capture') {
+        keepListeningRef.current = false;
+        setListening(false);
+        alert('Microphone unavailable — allow mic access to speak.');
+      }
+    };
     r.onend = () => {
+      // Browsers end recognition after silence; if the user hasn't stopped, keep going.
+      if (keepListeningRef.current) { try { r.start(); return; } catch {} }
       setListening(false);
-      if (autoSend && latest.trim()) send(latest.trim());
+      const finalText = (baseTextRef.current + finalRef.current).replace(/\s+/g, ' ').trim();
+      if (autoSendRef.current && finalText) { setInput(''); send(finalText); }
     };
     try { r.start(); setListening(true); } catch {}
   }
 
   function switchMode(m: 'text' | 'voice') {
     if (m === mode) return;
-    try { recRef.current?.stop(); } catch {}
+    stopListening();
     setListening(false);
     if (ttsSupported) window.speechSynthesis.cancel();
     setMode(m);
@@ -200,7 +199,8 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
       router.push('/login');
       return;
     }
-    const { error } = await supabase.from('rounds').insert({ transcript: messages, format });
+    const { motion, side, scores } = parseRoundMeta(messages);
+    const { error } = await supabase.from('rounds').insert({ transcript: messages, format, motion, side, scores });
     alert(error ? 'Save failed: ' + error.message : 'Round saved.');
   }
 
@@ -214,6 +214,7 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
           <button className={mode === 'text' ? 'on' : ''} onClick={() => switchMode('text')}>Text</button>
           <button className={mode === 'voice' ? 'on' : ''} onClick={() => switchMode('voice')} disabled={!speechSupported}>Voice</button>
         </div>
+        {!isGuest && <button className="btn btn-ghost" onClick={() => router.push('/history')}>History</button>}
         <button className="btn btn-ghost" onClick={() => router.push('/start')}>New round</button>
       </div>
 
@@ -237,7 +238,7 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
           <div key={i} className={`msg ${m.role === 'user' ? 'user' : 'ai'}`}>
             <div className="who">{m.role === 'user' ? 'You' : 'Opponent'}</div>
             {m.role === 'assistant'
-              ? <div className="md" dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content || '…') }} />
+              ? <div className="md" dangerouslySetInnerHTML={{ __html: renderMarkdown(stripMeta(m.content) || '…') }} />
               : m.content}
           </div>
         ))}
@@ -250,7 +251,7 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
             onClick={() => startListening(true)}
             disabled={busy || !speechSupported}
           >
-            {listening ? '● Listening… tap to stop' : '🎤 Tap to speak'}
+            {listening ? '● Recording — tap to finish & send' : '🎤 Deliver your speech'}
           </button>
           <div className="timer">
             <span className="clock">{fmtClock(timer)}</span>

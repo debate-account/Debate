@@ -24,6 +24,11 @@ export default function StartScreen() {
           <div className="go">Start impromptu &rarr;</div>
         </button>
       </div>
+      <p className="lead" style={{ marginTop: 22 }}>
+        <a onClick={() => router.push('/history')} style={{ color: 'var(--violet)', fontWeight: 600, cursor: 'pointer' }}>
+          View past rounds & progress &rarr;
+        </a>
+      </p>
     </div>
   );
 }

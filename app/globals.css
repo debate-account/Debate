@@ -168,3 +168,29 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01e
 .seg button{flex:1;font:inherit;font-size:13px;border:none;background:transparent;padding:8px 0;cursor:pointer;color:var(--muted)}
 .seg button.on{background:var(--violet);color:#fff}
 .settings-note{color:var(--muted);font-size:12px;margin:10px 0 0;line-height:1.5}
+
+/* history list + round detail */
+.history-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}
+.history-head .h-hero{margin:6px 0 0}
+.progress{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:22px}
+.progress-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:8px}
+.progress-title em{color:var(--muted);font-style:normal;font-weight:400}
+.progress-svg{width:100%;height:auto;display:block}
+.progress-svg .bar{fill:var(--violet)}
+.progress-svg .bar-label{fill:var(--muted);font-size:9px;text-anchor:middle;font-family:Inter,sans-serif}
+.round-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.round-card{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+  padding:14px 16px;text-decoration:none;color:var(--ink);transition:.15s}
+.round-card:hover{transform:translateY(-1px);border-color:#d6cff0}
+.round-main{display:flex;align-items:center;gap:10px;min-width:0}
+.round-motion{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.round-meta{display:flex;align-items:center;gap:12px;flex-shrink:0;color:var(--muted);font-size:13px}
+.round-score{font-weight:600;color:var(--violet)}
+.score-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+@media(max-width:520px){.score-cards{grid-template-columns:repeat(2,1fr)}}
+.score-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
+.score-val{font-family:Fraunces,serif;font-size:26px;font-weight:600;color:var(--ink)}
+.score-val span{font-size:14px;color:var(--muted);font-family:Inter,sans-serif}
+.score-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.transcript{display:flex;flex-direction:column;gap:12px;margin-top:8px}
