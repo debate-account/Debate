@@ -5,18 +5,20 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
 export default function Login() {
-  const supabase = createClient();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState('');
 
+  // Create the client lazily on click (browser only). Constructing it during
+  // render would run at build-time prerender and crash the whole build if the
+  // NEXT_PUBLIC_SUPABASE_* vars aren't present for that environment.
   async function signIn() {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await createClient().auth.signInWithPassword({ email, password });
     if (error) setMsg(error.message); else router.push('/start');
   }
   async function signUp() {
-    const { error } = await supabase.auth.signUp({
+    const { error } = await createClient().auth.signUp({
       email,
       password,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
