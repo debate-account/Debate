@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useSettings } from '@/components/Settings';
 import { renderMarkdown, stripMeta, parseRoundMeta } from '@/lib/markdown';
+import { roundLabel, parseSpeechTimers, DEFAULT_SPEECHES, DEFAULT_CRITERIA, type RoundFormat } from '@/lib/formats';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 const MODES = [
@@ -21,18 +22,31 @@ function fmtClock(sec: number) {
   const s = sec % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
 }
+// Short beep when a speech timer hits zero.
+function beep() {
+  try {
+    const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = 880; g.gain.value = 0.08;
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + 0.3);
+    setTimeout(() => ctx.close(), 400);
+  } catch {}
+}
 
-export default function Chat({ format, isGuest }: { format: 'prepared' | 'impromptu'; isGuest: boolean }) {
+export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest: boolean }) {
+  const isImpromptu = format.id === 'nydl' && format.mode === 'impromptu';
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<'text' | 'voice'>('text');
   const [listening, setListening] = useState(false);
-  const [timerOn, setTimerOn] = useState(false);
-  const [timer, setTimer] = useState(0);
   const router = useRouter();
   const supabase = createClient();
-  const { voiceURI, volume } = useSettings();
+  const { voiceURI, volume, wpm } = useSettings();
   const threadRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const recRef = useRef<any>(null);
@@ -40,6 +54,21 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
   const keepListeningRef = useRef(false); // true while the user intends to keep speaking
   const finalRef = useRef('');            // accumulated finalized transcript this session
   const autoSendRef = useRef(false);      // voice mode sends the speech on stop
+
+  // Round briefing — editable speech times + judging criteria, confirmed before start.
+  const hasTimes = format.speeches.some((s) => /\d+\s*min/i.test(s));
+  const [speechesText, setSpeechesText] = useState((hasTimes ? format.speeches : DEFAULT_SPEECHES).join('\n'));
+  const [criteriaText, setCriteriaText] = useState((format.criteria?.length ? format.criteria : DEFAULT_CRITERIA).join('\n'));
+  const speechesArr = useMemo(() => speechesText.split('\n').map((s) => s.trim()).filter(Boolean), [speechesText]);
+  const criteriaArr = useMemo(() => criteriaText.split('\n').map((s) => s.trim()).filter(Boolean), [criteriaText]);
+  const timers = useMemo(() => parseSpeechTimers(speechesArr), [speechesArr]);
+
+  // Countdown timer (voice mode) that auto-loads the chosen speech's length.
+  const [speechIdx, setSpeechIdx] = useState(0);
+  const [remaining, setRemaining] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [done, setDone] = useState(false);
+  const target = timers[speechIdx]?.seconds ?? 0;
 
   // Detect browser capabilities after mount so the first client render matches
   // the server (both "unsupported"), avoiding a hydration mismatch.
@@ -51,17 +80,25 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
   }, []);
 
   const words = useMemo(() => (input.trim() ? input.trim().split(/\s+/).length : 0), [input]);
+  const speakSecs = wpm > 0 ? Math.round((words / wpm) * 60) : 0;
 
   useEffect(() => {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
-  // Speech timer tick.
+  // Load the selected speech's time onto the clock when idle (or when its time is edited).
   useEffect(() => {
-    if (!timerOn) return;
-    const id = setInterval(() => setTimer((t) => t + 1), 1000);
-    return () => clearInterval(id);
-  }, [timerOn]);
+    if (!running) { setRemaining(target); setDone(false); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [speechIdx, target]);
+
+  // Countdown tick.
+  useEffect(() => {
+    if (!running) return;
+    if (remaining <= 0) { setRunning(false); setDone(true); beep(); return; }
+    const id = setTimeout(() => setRemaining((r) => Math.max(0, r - 1)), 1000);
+    return () => clearTimeout(id);
+  }, [running, remaining]);
 
   // Stop any audio/recognition when unmounting.
   useEffect(() => () => {
@@ -69,6 +106,14 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
     try { recRef.current?.stop(); } catch {}
     if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
   }, []);
+
+  function toggleTimer() {
+    if (running) { setRunning(false); return; }
+    if (remaining <= 0) setRemaining(target);
+    setDone(false);
+    setRunning(true);
+  }
+  function resetTimer() { setRunning(false); setDone(false); setRemaining(target); }
 
   function autosize() {
     const el = taRef.current;
@@ -100,7 +145,7 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next }),
+        body: JSON.stringify({ messages: next, format: { ...format, speeches: speechesArr, criteria: criteriaArr } }),
       });
       if (!res.ok || !res.body) {
         const msg = res.status === 429
@@ -115,8 +160,8 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
       let acc = '';
       setMessages((m) => [...m, { role: 'assistant', content: '' }]);
       for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
+        const { done: rdone, value } = await reader.read();
+        if (rdone) break;
         acc += decoder.decode(value, { stream: true });
         setMessages((m) => { const c = [...m]; c[c.length - 1] = { role: 'assistant', content: acc }; return c; });
       }
@@ -188,9 +233,16 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
   }
 
   function startRound() {
-    send(format === 'impromptu'
-      ? 'IMPROMPTU'
-      : "Let's run a prepared round. Ask me your setup questions — the motion, my side, and team size — then wait for me to begin.");
+    if (format.id === 'nydl') {
+      send(isImpromptu
+        ? 'IMPROMPTU'
+        : "Let's run a prepared round. Ask me your setup questions — the motion, my side, and team size — then wait for me to begin.");
+      return;
+    }
+    const times = speechesArr.length ? ` Speech structure: ${speechesArr.join('; ')}.` : '';
+    const crit = criteriaArr.length ? ` Judge on: ${criteriaArr.join('; ')}.` : '';
+    const custom = format.desc ? ` Format details: ${format.desc}.` : '';
+    send(`Let's run a ${format.name} round.${custom}${times}${crit} Set it up — give me the motion and my side, briefly explain the structure, then begin as my opponent.`);
   }
 
   async function saveRound() {
@@ -200,7 +252,7 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
       return;
     }
     const { motion, side, scores } = parseRoundMeta(messages);
-    const { error } = await supabase.from('rounds').insert({ transcript: messages, format, motion, side, scores });
+    const { error } = await supabase.from('rounds').insert({ transcript: messages, format: roundLabel(format), motion, side, scores });
     alert(error ? 'Save failed: ' + error.message : 'Round saved.');
   }
 
@@ -208,7 +260,7 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
     <div className="portal">
       <div className="topbar">
         <span className="brand">Debate Practice</span>
-        <span className={`fmt ${format}`}>{format === 'impromptu' ? 'Impromptu' : 'Prepared'}</span>
+        <span className="fmt neutral">{roundLabel(format)}</span>
         {isGuest && <span className="fmt guest">Trial</span>}
         <div className="toggle" title={speechSupported ? 'Switch input mode' : 'Voice needs a browser with speech support'}>
           <button className={mode === 'text' ? 'on' : ''} onClick={() => switchMode('text')}>Text</button>
@@ -227,12 +279,22 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
 
       <div className="thread" ref={threadRef}>
         {messages.length === 0 ? (
-          <div className="empty">
-            <h2>{format === 'impromptu' ? 'Ready for a surprise motion?' : 'Ready when you are.'}</h2>
-            <p>{format === 'impromptu'
-              ? 'Tap start and your opponent hands you a motion and your side.'
-              : 'Tap start and your opponent sets up the round with you.'}</p>
-            <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={startRound} disabled={busy}>Start round</button>
+          <div className="empty briefing">
+            <h2>{isImpromptu ? 'Impromptu round' : `${format.name} round`}</h2>
+            <p>Here&rsquo;s how this round runs — change anything before you start.</p>
+            <div className="brief">
+              <div className="brief-block">
+                <label>Speech times <span>· the timer counts these down</span></label>
+                <textarea value={speechesText} onChange={(e) => setSpeechesText(e.target.value)}
+                  rows={Math.min(8, speechesArr.length + 1)} spellCheck={false} />
+              </div>
+              <div className="brief-block">
+                <label>Judging criteria <span>· the judge scores these</span></label>
+                <textarea value={criteriaText} onChange={(e) => setCriteriaText(e.target.value)}
+                  rows={Math.min(6, criteriaArr.length + 1)} spellCheck={false} />
+              </div>
+            </div>
+            <button className="btn btn-primary" onClick={startRound} disabled={busy}>Start round</button>
           </div>
         ) : messages.map((m, i) => (
           <div key={i} className={`msg ${m.role === 'user' ? 'user' : 'ai'}`}>
@@ -254,9 +316,18 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
             {listening ? '● Recording — tap to finish & send' : '🎤 Deliver your speech'}
           </button>
           <div className="timer">
-            <span className="clock">{fmtClock(timer)}</span>
-            <button onClick={() => setTimerOn((o) => !o)}>{timerOn ? 'Pause' : 'Start'}</button>
-            <button onClick={() => { setTimerOn(false); setTimer(0); }}>Reset</button>
+            {timers.length > 0 ? (
+              <>
+                <select value={speechIdx} onChange={(e) => { setRunning(false); setSpeechIdx(Number(e.target.value)); }}>
+                  {timers.map((t, i) => <option key={i} value={i}>{t.label} · {fmtClock(t.seconds)}</option>)}
+                </select>
+                <span className={`clock ${done ? 'done' : ''}`}>{done ? 'Time!' : fmtClock(remaining)}</span>
+                <button onClick={toggleTimer}>{running ? 'Pause' : 'Start'}</button>
+                <button onClick={resetTimer}>Reset</button>
+              </>
+            ) : (
+              <span className="voicenote">Add speech times in the briefing to use the timer.</span>
+            )}
           </div>
           {ttsSupported && messages.length > 0 && (
             <button className="replay" title="Replay last reply"
@@ -273,7 +344,9 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
             onChange={(e) => { setInput(e.target.value); autosize(); }}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(input); } }}
             placeholder="Write your speech here…  (⌘/Ctrl + Enter to send)" disabled={busy} />
-          {words > 0 && <span className="wordcount">{words} {words === 1 ? 'word' : 'words'}</span>}
+          {words > 0 && (
+            <span className="wordcount">{words} {words === 1 ? 'word' : 'words'} · ~{fmtClock(speakSecs)} at {wpm} wpm</span>
+          )}
         </div>
         {speechSupported && (
           <button type="button" className={`iconbtn mic ${listening && mode === 'text' ? 'live' : ''}`}

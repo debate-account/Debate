@@ -61,6 +61,10 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01e
 .trial-note{color:var(--muted);font-size:12px;text-align:center;margin:6px 0 0}
 
 .wrap{max-width:760px;margin:0 auto;padding:52px 20px}
+.wrap-wide{max-width:940px;margin:0 auto;padding:52px 20px}
+.fmt-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));margin-top:6px}
+.choice .speeches{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:3px}
+.choice .speeches li{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.4}
 .eyebrow{font-weight:600;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--violet)}
 .h-hero{font-size:40px;line-height:1.05;margin:10px 0 6px}
 .lead{color:var(--muted);font-size:16px;margin:0 0 30px}
@@ -84,7 +88,7 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01e
 .brand{font-family:Fraunces,serif;font-weight:600;font-size:18px;margin-right:auto}
 .fmt{font-size:12px;font-weight:600;padding:4px 11px;border-radius:999px}
 .fmt.prepared{background:#fdeee9;color:var(--prep)} .fmt.impromptu{background:#eaeeff;color:var(--impromptu)}
-.fmt.guest{background:var(--field);color:var(--muted)}
+.fmt.guest,.fmt.neutral{background:var(--field);color:var(--muted)}
 .toggle{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
 .toggle button{font:inherit;font-size:13px;border:none;background:transparent;padding:6px 13px;cursor:pointer;color:var(--muted)}
 .toggle button.on{background:var(--violet);color:#fff}
@@ -125,10 +129,23 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01e
 .talk.live{background:var(--violet);color:#fff;border-color:var(--violet);animation:pulse 1.2s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(139,92,246,.5)}50%{box-shadow:0 0 0 6px rgba(139,92,246,0)}}
 .timer{display:flex;align-items:center;gap:6px;margin-left:auto}
-.timer .clock{font-variant-numeric:tabular-nums;font-weight:600;font-size:16px;min-width:52px;color:var(--ink)}
+.timer .clock{font-variant-numeric:tabular-nums;font-weight:600;font-size:16px;min-width:52px;text-align:center;color:var(--ink)}
+.timer .clock.done{color:var(--prep);animation:pulse 1s infinite}
+.timer select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--line);border-radius:10px;
+  background:var(--surface);color:var(--ink);max-width:180px}
 .timer button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--surface);color:var(--ink);
   border-radius:999px;padding:5px 12px;cursor:pointer}
 .timer button:hover{border-color:#d6cff0}
+.voicenote{font-size:13px;color:var(--muted)}
+
+/* pre-round briefing (editable speech times + judging criteria) */
+.empty.briefing{max-width:560px}
+.brief{display:flex;flex-direction:column;gap:14px;text-align:left;margin:18px 0 20px}
+.brief-block label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px}
+.brief-block label span{font-weight:400;color:var(--muted)}
+.brief-block textarea{width:100%;font:inherit;font-size:14px;line-height:1.55;padding:10px 12px;border:1px solid var(--line);
+  border-radius:12px;background:var(--field);color:var(--ink);resize:vertical}
+.brief-block textarea:focus{outline:none;border-color:var(--violet);background:var(--field-focus)}
 .replay{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--surface);color:var(--muted);
   border-radius:999px;padding:6px 12px;cursor:pointer}
 

@@ -9,6 +9,8 @@ type Settings = {
   setVoiceURI: (v: string) => void;
   volume: number;              // 0..1, used for AI speech in voice mode
   setVolume: (v: number) => void;
+  wpm: number;                 // speaking pace for the writing time estimate
+  setWpm: (v: number) => void;
   voices: SpeechSynthesisVoice[];
 };
 
@@ -19,12 +21,13 @@ export const useSettings = () => {
   return s;
 };
 
-const LS = { theme: 'dp.theme', voice: 'dp.voiceURI', vol: 'dp.volume' };
+const LS = { theme: 'dp.theme', voice: 'dp.voiceURI', vol: 'dp.volume', wpm: 'dp.wpm' };
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('light');
   const [voiceURI, setVoiceURIState] = useState('');
   const [volume, setVolumeState] = useState(1);
+  const [wpm, setWpmState] = useState(180);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   // Hydrate from localStorage once on mount.
@@ -36,6 +39,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     if (v) setVoiceURIState(v);
     const vol = localStorage.getItem(LS.vol);
     if (vol != null) setVolumeState(Number(vol));
+    const w = localStorage.getItem(LS.wpm);
+    if (w != null) setWpmState(Number(w));
   }, []);
 
   // Load the browser's speech-synthesis voices (arrive asynchronously).
@@ -60,9 +65,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setVolumeState(v);
     localStorage.setItem(LS.vol, String(v));
   }, []);
+  const setWpm = useCallback((v: number) => {
+    setWpmState(v);
+    localStorage.setItem(LS.wpm, String(v));
+  }, []);
 
   return (
-    <Ctx.Provider value={{ theme, setTheme, voiceURI, setVoiceURI, volume, setVolume, voices }}>
+    <Ctx.Provider value={{ theme, setTheme, voiceURI, setVoiceURI, volume, setVolume, wpm, setWpm, voices }}>
       {children}
     </Ctx.Provider>
   );
@@ -70,7 +79,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
 // Floating gear button + settings panel, available on every screen.
 export function SettingsButton() {
-  const { theme, setTheme, voiceURI, setVoiceURI, volume, setVolume, voices } = useSettings();
+  const { theme, setTheme, voiceURI, setVoiceURI, volume, setVolume, wpm, setWpm, voices } = useSettings();
   const [open, setOpen] = useState(false);
 
   return (
@@ -116,6 +125,14 @@ export function SettingsButton() {
               <input
                 type="range" min={0} max={1} step={0.05} value={volume}
                 onChange={(e) => setVolume(Number(e.target.value))}
+              />
+            </label>
+
+            <label className="settings-row">
+              <span>Speaking pace <em>{wpm} wpm</em></span>
+              <input
+                type="range" min={100} max={220} step={5} value={wpm}
+                onChange={(e) => setWpm(Number(e.target.value))}
               />
             </label>
 

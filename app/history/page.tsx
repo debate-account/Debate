@@ -52,7 +52,7 @@ export default async function History() {
               <li key={r.id}>
                 <Link href={`/history/${r.id}`} className="round-card">
                   <div className="round-main">
-                    <span className={`fmt ${r.format || ''}`}>{r.format === 'impromptu' ? 'Impromptu' : 'Prepared'}</span>
+                    <span className="fmt neutral">{r.format || 'Round'}</span>
                     <span className="round-motion">{r.motion || 'Untitled round'}</span>
                   </div>
                   <div className="round-meta">
