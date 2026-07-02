@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useSettings } from '@/components/Settings';
 import { renderMarkdown, stripMeta, parseRoundMeta } from '@/lib/markdown';
+import { roundLabel, type RoundFormat } from '@/lib/formats';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 const MODES = [
@@ -22,7 +23,8 @@ function fmtClock(sec: number) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-export default function Chat({ format, isGuest }: { format: 'prepared' | 'impromptu'; isGuest: boolean }) {
+export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest: boolean }) {
+  const isImpromptu = format.id === 'nydl' && format.mode === 'impromptu';
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -100,7 +102,7 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next }),
+        body: JSON.stringify({ messages: next, format }),
       });
       if (!res.ok || !res.body) {
         const msg = res.status === 429
@@ -188,9 +190,15 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
   }
 
   function startRound() {
-    send(format === 'impromptu'
-      ? 'IMPROMPTU'
-      : "Let's run a prepared round. Ask me your setup questions — the motion, my side, and team size — then wait for me to begin.");
+    if (format.id === 'nydl') {
+      send(isImpromptu
+        ? 'IMPROMPTU'
+        : "Let's run a prepared round. Ask me your setup questions — the motion, my side, and team size — then wait for me to begin.");
+      return;
+    }
+    const times = format.speeches.length ? ` The speech structure is: ${format.speeches.join('; ')}.` : '';
+    const custom = format.desc ? ` Format details: ${format.desc}.` : '';
+    send(`Let's run a ${format.name} round.${custom}${times} Set it up — give me the motion and my side, briefly explain the structure, then begin as my opponent.`);
   }
 
   async function saveRound() {
@@ -200,7 +208,7 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
       return;
     }
     const { motion, side, scores } = parseRoundMeta(messages);
-    const { error } = await supabase.from('rounds').insert({ transcript: messages, format, motion, side, scores });
+    const { error } = await supabase.from('rounds').insert({ transcript: messages, format: roundLabel(format), motion, side, scores });
     alert(error ? 'Save failed: ' + error.message : 'Round saved.');
   }
 
@@ -208,7 +216,7 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
     <div className="portal">
       <div className="topbar">
         <span className="brand">Debate Practice</span>
-        <span className={`fmt ${format}`}>{format === 'impromptu' ? 'Impromptu' : 'Prepared'}</span>
+        <span className="fmt neutral">{roundLabel(format)}</span>
         {isGuest && <span className="fmt guest">Trial</span>}
         <div className="toggle" title={speechSupported ? 'Switch input mode' : 'Voice needs a browser with speech support'}>
           <button className={mode === 'text' ? 'on' : ''} onClick={() => switchMode('text')}>Text</button>
@@ -228,10 +236,10 @@ export default function Chat({ format, isGuest }: { format: 'prepared' | 'improm
       <div className="thread" ref={threadRef}>
         {messages.length === 0 ? (
           <div className="empty">
-            <h2>{format === 'impromptu' ? 'Ready for a surprise motion?' : 'Ready when you are.'}</h2>
-            <p>{format === 'impromptu'
+            <h2>{isImpromptu ? 'Ready for a surprise motion?' : 'Ready when you are.'}</h2>
+            <p>{isImpromptu
               ? 'Tap start and your opponent hands you a motion and your side.'
-              : 'Tap start and your opponent sets up the round with you.'}</p>
+              : `Tap start and your opponent sets up the ${format.name} round with you.`}</p>
             <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={startRound} disabled={busy}>Start round</button>
           </div>
         ) : messages.map((m, i) => (

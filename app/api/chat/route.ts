@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { systemPrompt } from '@/lib/prompt';
+import { systemPrompt, formatBrief } from '@/lib/prompt';
 import { createClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs'; // needs fs for the prompt
@@ -47,12 +47,12 @@ export async function POST(req: Request) {
 
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-  const { messages } = await req.json();
+  const { messages, format } = await req.json();
 
   const stream = anthropic.messages.stream({
     model: 'claude-sonnet-4-6',
     max_tokens: 3000,
-    system: systemPrompt(),
+    system: systemPrompt() + formatBrief(format),
     messages,
   });
 

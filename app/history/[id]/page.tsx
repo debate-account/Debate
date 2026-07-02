@@ -28,7 +28,7 @@ export default async function RoundDetail({ params }: { params: { id: string } }
       <Link className="btn btn-ghost" href="/history">← History</Link>
       <h1 className="h-hero" style={{ marginTop: 10 }}>{data.motion || 'Untitled round'}</h1>
       <p className="lead" style={{ marginBottom: 18 }}>
-        {data.format === 'impromptu' ? 'Impromptu' : 'Prepared'}
+        {data.format || 'Round'}
         {data.side ? ` · ${data.side}` : ''} · {new Date(data.created_at).toLocaleString()}
       </p>
 
