@@ -16,8 +16,12 @@ export default function Login() {
     if (error) setMsg(error.message); else router.push('/start');
   }
   async function signUp() {
-    const { error } = await supabase.auth.signUp({ email, password });
-    setMsg(error ? error.message : 'Account created — now tap Sign in.');
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
+    setMsg(error ? error.message : 'Check your email for a confirmation link, then come back and sign in.');
   }
 
   return (
@@ -32,6 +36,17 @@ export default function Login() {
           <button className="btn" onClick={signUp}>Sign up</button>
         </div>
         {msg && <p className="err">{msg}</p>}
+
+        <ol className="howto">
+          <li>Enter a <strong>real email</strong> and a password, then click <strong>Sign up</strong>.</li>
+          <li>Open the confirmation email we send and click the link — it lands on a “confirmed” page.</li>
+          <li>Come back here and click <strong>Sign in</strong> with the same email and password.</li>
+        </ol>
+
+        <button className="btn btn-ghost trial" onClick={() => router.push('/start')}>
+          Skip — try without an account →
+        </button>
+        <p className="trial-note">Trial rounds work fully but aren’t saved.</p>
       </div>
     </div>
   );

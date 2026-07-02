@@ -4,10 +4,37 @@ import { createClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs'; // needs fs for the prompt
 
+// Trial cap for logged-OUT users, keyed by IP. Roughly one round's worth of
+// messages per IP per day; logged-in users are exempt (we can see who they are).
+// NOTE: this is an in-memory counter — it resets on cold start and isn't shared
+// across serverless instances, so it's a casual deterrent, not hard enforcement.
+// For hard limits, back it with a durable store (a Supabase table or Vercel KV).
+const TRIAL_MSG_CAP = 15;
+const TRIAL_WINDOW_MS = 24 * 60 * 60 * 1000;
+const trialHits = new Map<string, { count: number; resetAt: number }>();
+
+function clientIp(req: Request): string {
+  const xff = req.headers.get('x-forwarded-for');
+  return xff?.split(',')[0].trim() || req.headers.get('x-real-ip') || 'unknown';
+}
+
 export async function POST(req: Request) {
+  // Guests can run an unsaved trial round, but are capped per IP. Logged-in
+  // users bypass the cap entirely.
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  if (!user) {
+    const ip = clientIp(req);
+    const now = Date.now();
+    const rec = trialHits.get(ip);
+    if (!rec || now > rec.resetAt) {
+      trialHits.set(ip, { count: 1, resetAt: now + TRIAL_WINDOW_MS });
+    } else if (rec.count >= TRIAL_MSG_CAP) {
+      return new Response('Trial limit reached — sign up or log in to keep practicing.', { status: 429 });
+    } else {
+      rec.count += 1;
+    }
+  }
 
   // Surface a missing/empty API key explicitly. Constructing the client at
   // module scope with an undefined key throws opaquely at cold-start, and an
