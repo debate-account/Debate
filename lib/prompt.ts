@@ -25,14 +25,29 @@ export function systemPrompt(): string {
 // When a non-NYDL format is chosen, tell the model to run the round by that
 // format's rules and speech times. NYDL / ESU is the style the base
 // instructions already assume, so it needs no brief.
-export function formatBrief(format?: { id?: string; name?: string; desc?: string; speeches?: string[] }): string {
-  if (!format || !format.id || format.id === 'nydl') return '';
-  const parts = [`\n\n# ROUND FORMAT: ${format.name || format.id}`];
-  if (format.desc) parts.push(`The debater describes this format as: ${format.desc}`);
+export function formatBrief(format?: { id?: string; name?: string; desc?: string; speeches?: string[]; criteria?: string[] }): string {
+  if (!format) return '';
+  const isNydl = !format.id || format.id === 'nydl';
+  const parts: string[] = [];
+  if (isNydl) {
+    parts.push('\n\n# ROUND SETUP');
+  } else {
+    parts.push(`\n\n# ROUND FORMAT: ${format.name || format.id}`);
+    if (format.desc) parts.push(`The debater describes this format as: ${format.desc}`);
+  }
   if (format.speeches && format.speeches.length) {
     parts.push('Speech structure and times:\n- ' + format.speeches.join('\n- '));
   }
-  parts.push("Run the opponent, judge, and coach according to THIS format's roles, conventions, and speech times. Announce each speech and hold the structure, but keep the same coaching and judging quality as always.");
+  if (format.criteria && format.criteria.length) {
+    parts.push('Judge the round on these criteria:\n- ' + format.criteria.join('\n- '));
+  }
+  // Nothing substantive beyond the header → no brief.
+  if (parts.length === 1) return '';
+  if (isNydl) {
+    parts.push('Use these speech times and judging criteria for this round.');
+  } else {
+    parts.push("Run the opponent, judge, and coach according to THIS format's roles, conventions, and speech times. Announce each speech and hold the structure, but keep the same coaching and judging quality as always.");
+  }
   return parts.join('\n');
 }
 

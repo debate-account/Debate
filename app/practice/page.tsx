@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import Chat from '@/components/Chat';
-import { findFormat, type RoundFormat } from '@/lib/formats';
+import { findFormat, criteriaFor, type RoundFormat } from '@/lib/formats';
 
 export default async function Practice({
   searchParams,
@@ -19,6 +19,7 @@ export default async function Practice({
     mode: id === 'nydl' ? (searchParams.mode === 'impromptu' ? 'impromptu' : 'prepared') : undefined,
     desc: id === 'other' ? searchParams.desc : undefined,
     speeches: def?.speeches || [],
+    criteria: criteriaFor(id),
   };
   return <Chat format={format} isGuest={!user} />;
 }

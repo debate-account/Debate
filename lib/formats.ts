@@ -20,7 +20,22 @@ export type RoundFormat = {
   mode?: string;        // nydl: 'prepared' | 'impromptu'
   desc?: string;        // other: the user's custom description
   speeches: string[];
+  criteria?: string[];  // judging criteria (editable in the briefing)
 };
+
+// Default judging axes — aligned with the judge's SCORES (content/style/strategy).
+export const DEFAULT_CRITERIA = [
+  'Content — argument quality, evidence, and direct clash',
+  'Style — delivery, clarity, and persuasion',
+  'Strategy — structure, prioritization, and use of time',
+];
+
+// Editable placeholder schedule for formats without fixed times (NYDL / custom).
+export const DEFAULT_SPEECHES = [
+  'Opening — 5 min',
+  'Rebuttal — 3 min',
+  'Closing — 3 min',
+];
 
 export const FORMATS: Format[] = [
   {
@@ -56,7 +71,7 @@ export const FORMATS: Format[] = [
     name: 'Policy (CX)',
     tag: '2v2 · evidence-heavy',
     blurb: 'Two-on-two, evidence-intensive debate over a policy resolution.',
-    speeches: ['Constructives — 8 min', 'Cross-ex — 3 min', 'Rebuttals — 5 min', 'Prep time — 8 min'],
+    speeches: ['Constructive — 8 min', 'Cross-ex — 3 min', 'Rebuttal — 5 min', 'Prep time — 8 min'],
     cls: 'impromptu',
   },
   {
@@ -64,7 +79,7 @@ export const FORMATS: Format[] = [
     name: 'British Parliamentary',
     tag: '4 teams · 8 speakers',
     blurb: 'Four two-person teams across Gov and Opp benches; extend and whip.',
-    speeches: ['Each speech — 7 min', '4 teams, 8 speakers', '15 min prep'],
+    speeches: ['Speech — 7 min', 'Prep — 15 min'],
     cls: 'prep',
   },
   {
@@ -91,8 +106,26 @@ export function findFormat(id?: string): Format | undefined {
   return FORMATS.find((f) => f.id === id);
 }
 
+// Judging criteria for a format (same three axes as the score rubric for now).
+export function criteriaFor(_id?: string): string[] {
+  return DEFAULT_CRITERIA;
+}
+
 // Human label stored on a saved round / shown in history.
 export function roundLabel(f: RoundFormat): string {
   if (f.id === 'nydl' && f.mode) return f.mode[0].toUpperCase() + f.mode.slice(1);
   return f.name;
+}
+
+// Parse "1AC — 6 min", "Constructive — 4 min each" etc. into timer entries.
+export function parseSpeechTimers(speeches: string[]): { label: string; seconds: number }[] {
+  const out: { label: string; seconds: number }[] = [];
+  for (const line of speeches) {
+    const m = line.match(/(\d+(?:\.\d+)?)\s*min/i);
+    if (!m) continue;
+    const seconds = Math.round(parseFloat(m[1]) * 60);
+    const label = line.replace(/[—-]?\s*\d+(?:\.\d+)?\s*min.*$/i, '').replace(/[—-]\s*$/, '').trim() || line;
+    out.push({ label, seconds });
+  }
+  return out;
 }
