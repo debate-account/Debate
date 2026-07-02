@@ -25,8 +25,9 @@ export function systemPrompt(): string {
 // When a non-NYDL format is chosen, tell the model to run the round by that
 // format's rules and speech times. NYDL / ESU is the style the base
 // instructions already assume, so it needs no brief.
-export function formatBrief(format?: { id?: string; name?: string; desc?: string; speeches?: string[]; criteria?: string[] }): string {
+export function formatBrief(format?: { id?: string; name?: string; desc?: string; speeches?: string[]; criteria?: string[]; drill?: boolean; brief?: string }): string {
   if (!format) return '';
+  if (format.drill && format.brief) return '\n\n# DRILL MODE\n' + format.brief;
   const isNydl = !format.id || format.id === 'nydl';
   const parts: string[] = [];
   if (isNydl) {

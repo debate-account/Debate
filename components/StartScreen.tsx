@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FORMATS, OTHER } from '@/lib/formats';
+import { DRILLS } from '@/lib/drills';
 
 export default function StartScreen() {
   const router = useRouter();
@@ -76,6 +77,21 @@ export default function StartScreen() {
               {f.speeches.map((s, i) => <li key={i}>{s}</li>)}
             </ul>
             <div className="go">{f.id === 'nydl' ? 'Choose round →' : f.id === 'other' ? 'Describe →' : 'Start →'}</div>
+          </button>
+        ))}
+      </div>
+
+      <div className="eyebrow" style={{ marginTop: 40 }}>Or drill one skill</div>
+      <h2 className="drills-head">Skill drills</h2>
+      <p className="lead" style={{ marginBottom: 18 }}>No opponent — just a scenario, your response, and targeted coaching.</p>
+      <div className="fmt-grid">
+        {DRILLS.map((d) => (
+          <button key={d.id} className="choice drill" onClick={() => router.push(`/practice?drill=${d.id}`)}>
+            <span className="edge" />
+            <span className="tag">{d.tag}</span>
+            <h3>{d.name}</h3>
+            <p>{d.blurb}</p>
+            <div className="go">Start drill →</div>
           </button>
         ))}
       </div>

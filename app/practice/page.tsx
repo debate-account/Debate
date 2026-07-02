@@ -1,14 +1,26 @@
 import { createClient } from '@/lib/supabase/server';
 import Chat from '@/components/Chat';
 import { findFormat, criteriaFor, type RoundFormat } from '@/lib/formats';
+import { findDrill } from '@/lib/drills';
 
 export default async function Practice({
   searchParams,
 }: {
-  searchParams: { format?: string; mode?: string; desc?: string };
+  searchParams: { format?: string; mode?: string; desc?: string; drill?: string };
 }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
+
+  // Skill drill: no opponent, just scenario → response → coaching.
+  const drill = searchParams.drill ? findDrill(searchParams.drill) : undefined;
+  if (drill) {
+    const format: RoundFormat = {
+      id: drill.id, name: drill.name, drill: true,
+      brief: drill.brief, kickoff: drill.kickoff, intro: drill.blurb,
+      speeches: [], criteria: [],
+    };
+    return <Chat format={format} isGuest={!user} />;
+  }
 
   // No login gate: guests can run an unsaved trial round. Saving is gated in Chat.
   const def = findFormat(searchParams.format);
