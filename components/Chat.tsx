@@ -55,6 +55,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
   const keepListeningRef = useRef(false); // true while the user intends to keep speaking
   const finalRef = useRef('');            // accumulated finalized transcript this session
   const autoSendRef = useRef(false);      // voice mode sends the speech on stop
+  const startedRef = useRef(false);       // recognition actually started (vs. denied up front)
 
   // Round briefing — editable speech times + judging criteria, confirmed before start.
   const hasTimes = format.speeches.some((s) => /\d+\s*min/i.test(s));
@@ -186,10 +187,16 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
     if (!speechSupported) return;
     if (listening) { stopListening(); return; }
     const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    // Safari / iOS (all WebKit) block restarting recognition outside a user
+    // gesture, so don't auto-restart through pauses there — finalize instead.
+    const ua = navigator.userAgent;
+    const canRestart = !(/iphone|ipad|ipod/i.test(ua) ||
+      (/safari/i.test(ua) && !/chrome|crios|chromium|android|edg|edgios|fxios/i.test(ua)));
     autoSendRef.current = autoSend;
     baseTextRef.current = autoSend ? '' : (input ? input + ' ' : '');
     finalRef.current = '';
     keepListeningRef.current = true;
+    startedRef.current = false;
 
     const r = new SR();
     r.continuous = true;
@@ -197,6 +204,14 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
     r.lang = 'en-US';
     recRef.current = r;
 
+    const finalize = () => {
+      keepListeningRef.current = false;
+      setListening(false);
+      const finalText = (baseTextRef.current + finalRef.current).replace(/\s+/g, ' ').trim();
+      if (autoSendRef.current && finalText) { setInput(''); send(finalText); }
+    };
+
+    r.onstart = () => { startedRef.current = true; };
     r.onresult = (e: any) => {
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -208,19 +223,19 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
       requestAnimationFrame(autosize);
     };
     r.onerror = (ev: any) => {
-      // Mic blocked or unavailable — stop for good and let the user know.
-      if (ev?.error === 'not-allowed' || ev?.error === 'service-not-allowed' || ev?.error === 'audio-capture') {
-        keepListeningRef.current = false;
-        setListening(false);
-        alert('Microphone unavailable — allow mic access to speak.');
-      }
+      const err = ev?.error;
+      if (err !== 'not-allowed' && err !== 'service-not-allowed' && err !== 'audio-capture') return;
+      // Only a real permission/hardware problem if recognition never started.
+      // Safari fires 'not-allowed' on an auto-restart — treat that as end of speech.
+      if (startedRef.current) { finalize(); return; }
+      keepListeningRef.current = false;
+      setListening(false);
+      alert('Microphone blocked. Allow the mic for this site, then tap the mic again. (Safari dictation is flaky — Chrome or Edge works best.)');
     };
     r.onend = () => {
-      // Browsers end recognition after silence; if the user hasn't stopped, keep going.
-      if (keepListeningRef.current) { try { r.start(); return; } catch {} }
-      setListening(false);
-      const finalText = (baseTextRef.current + finalRef.current).replace(/\s+/g, ' ').trim();
-      if (autoSendRef.current && finalText) { setInput(''); send(finalText); }
+      // Browsers end recognition after silence; where allowed, keep going.
+      if (keepListeningRef.current && canRestart) { try { r.start(); return; } catch {} }
+      finalize();
     };
     try { r.start(); setListening(true); } catch {}
   }
