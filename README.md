@@ -17,6 +17,14 @@ are appended, mirroring the Claude Project's "project knowledge."
 3. **Env**: `cp .env.local.example .env.local` and fill in the three values.
 4. **Run**: `npm install` then `npm run dev` → open http://localhost:3000
 
+## Checks
+Run after any change to catch regressions before pushing:
+- `npm run check` — TypeScript type-check + unit tests (fast, ~1s).
+- `npm test` — unit tests only; `npm run test:watch` — re-run on save.
+- `npm run typecheck` — type-check only.
+
+Unit tests live next to the code in `lib/*.test.ts` (Vitest) and cover the pure logic: markdown/metadata parsing, format & drill wiring, prompt briefs, and speech-time parsing. UI is still verified by running the app. Vercel runs `next build` on every push, which is the deploy-level gate.
+
 ## Deploy
 Push to GitHub, import into Vercel, add the same three env vars. Done.
 
