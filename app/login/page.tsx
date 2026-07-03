@@ -23,7 +23,7 @@ export default function Login() {
       password,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
-    setMsg(error ? error.message : 'Check your email for a confirmation link, then come back and sign in.');
+    setMsg(error ? error.message : 'Check your email to confirm your account.');
   }
 
   return (
@@ -39,11 +39,7 @@ export default function Login() {
         </div>
         {msg && <p className="err">{msg}</p>}
 
-        <ol className="howto">
-          <li>Enter a <strong>real email</strong> and a password, then click <strong>Sign up</strong>.</li>
-          <li>Open the confirmation email we send and click the link — it lands on a “confirmed” page.</li>
-          <li>Come back here and click <strong>Sign in</strong> with the same email and password.</li>
-        </ol>
+        <p className="auth-note">Use a real email — sign-up sends a confirmation link. Heads up: that link can fail in Safari; if it doesn’t open, try Chrome or Edge.</p>
 
         <button className="btn btn-ghost trial" onClick={() => router.push('/start')}>
           Skip — try without an account →

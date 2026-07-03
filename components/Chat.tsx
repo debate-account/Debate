@@ -47,6 +47,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
   const [mode, setMode] = useState<'text' | 'voice'>('text');
   const [listening, setListening] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [trialLimited, setTrialLimited] = useState(false);
   const router = useRouter();
   const supabase = createClient();
   const { voiceURI, volume, wpm, setOpen: setSettingsOpen } = useSettings();
@@ -153,10 +154,11 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
         body: JSON.stringify({ messages: next, format: { ...format, speeches: speechesArr, criteria: criteriaArr, argMode: format.progressiveArgs?.length ? argMode : undefined } }),
       });
       if (!res.ok || !res.body) {
-        const msg = res.status === 429
-          ? '(Trial limit reached — sign up or log in to keep practicing.)'
-          : '(Could not reach the opponent — check the API key in .env.local.)';
-        setMessages((m) => [...m, { role: 'assistant', content: msg }]);
+        if (res.status === 429) {
+          setTrialLimited(true);
+        } else {
+          setMessages((m) => [...m, { role: 'assistant', content: '(Could not reach the opponent — check the API key in .env.local.)' }]);
+        }
         setBusy(false);
         return;
       }
@@ -406,6 +408,13 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
               🔊 Replay
             </button>
           )}
+        </div>
+      )}
+
+      {trialLimited && (
+        <div className="trial-banner">
+          <span>Trial limit reached — sign in to keep practicing, and your rounds will save.</span>
+          <button className="btn btn-primary" onClick={() => router.push('/login')}>Sign in</button>
         </div>
       )}
 
