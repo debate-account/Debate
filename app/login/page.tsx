@@ -39,7 +39,7 @@ export default function Login() {
         </div>
         {msg && <p className="err">{msg}</p>}
 
-        <p className="auth-note">Use a real email — sign-up sends a confirmation link. Heads up: that link can fail in Safari; if it doesn’t open, try Chrome or Edge.</p>
+        <p className="auth-note">Use a real email, then open the confirmation link we send — even if it shows an error page in Safari, opening it still confirms your account.</p>
 
         <button className="btn btn-ghost trial" onClick={() => router.push('/start')}>
           Skip — try without an account →
