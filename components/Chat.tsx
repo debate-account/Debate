@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useSettings } from '@/components/Settings';
 import { renderMarkdown, stripMeta, parseRoundMeta } from '@/lib/markdown';
-import { roundLabel, parseSpeechTimers, DEFAULT_SPEECHES, DEFAULT_CRITERIA, type RoundFormat } from '@/lib/formats';
+import { roundLabel, parseSpeechTimers, joinArgs, DEFAULT_SPEECHES, DEFAULT_CRITERIA, type RoundFormat } from '@/lib/formats';
 import { WEIGHING_REF, BUTTON_REF } from '@/lib/reference';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
@@ -63,6 +63,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
   const hasTimes = format.speeches.some((s) => /\d+\s*min/i.test(s));
   const [speechesText, setSpeechesText] = useState((hasTimes ? format.speeches : DEFAULT_SPEECHES).join('\n'));
   const [criteriaText, setCriteriaText] = useState((format.criteria?.length ? format.criteria : DEFAULT_CRITERIA).join('\n'));
+  const [argMode, setArgMode] = useState<'traditional' | 'progressive'>('traditional');
   const speechesArr = useMemo(() => speechesText.split('\n').map((s) => s.trim()).filter(Boolean), [speechesText]);
   const criteriaArr = useMemo(() => criteriaText.split('\n').map((s) => s.trim()).filter(Boolean), [criteriaText]);
   const timers = useMemo(() => parseSpeechTimers(speechesArr), [speechesArr]);
@@ -149,7 +150,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next, format: { ...format, speeches: speechesArr, criteria: criteriaArr } }),
+        body: JSON.stringify({ messages: next, format: { ...format, speeches: speechesArr, criteria: criteriaArr, argMode: format.progressiveArgs?.length ? argMode : undefined } }),
       });
       if (!res.ok || !res.body) {
         const msg = res.status === 429
@@ -346,6 +347,21 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
                 <textarea value={criteriaText} onChange={(e) => setCriteriaText(e.target.value)}
                   rows={Math.min(6, criteriaArr.length + 1)} spellCheck={false} />
               </div>
+              {format.progressiveArgs && format.progressiveArgs.length > 0 && (
+                <div className="brief-block">
+                  <label>Argument style</label>
+                  <div className="seg">
+                    <button type="button" className={argMode === 'traditional' ? 'on' : ''} onClick={() => setArgMode('traditional')}>Traditional</button>
+                    <button type="button" className={argMode === 'progressive' ? 'on' : ''} onClick={() => setArgMode('progressive')}>Progressive</button>
+                  </div>
+                  <p className="brief-note">
+                    Traditional blocks {joinArgs(format.progressiveArgs)}. Progressive allows {format.progressiveArgs.length > 1 ? 'them' : 'it'}.
+                  </p>
+                  {argMode === 'progressive' && (
+                    <p className="brief-warn">⚠️ Progressive is a major step up in difficulty — expect {joinArgs(format.progressiveArgs)}.</p>
+                  )}
+                </div>
+              )}
             </div>
             <button className="btn btn-primary" onClick={startRound} disabled={busy}>Start round</button>
           </div>

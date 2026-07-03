@@ -11,6 +11,7 @@ export type Format = {
   speeches: string[];   // rendered under the card, and fed to the AI
   cls: 'prep' | 'impromptu';
   modes?: Mode[];       // only NYDL / ESU
+  progressiveArgs?: string[]; // advanced arg types this format's progressive mode allows
 };
 
 // What a started round carries into Chat + the API.
@@ -21,6 +22,8 @@ export type RoundFormat = {
   desc?: string;        // other: the user's custom description
   speeches: string[];
   criteria?: string[];  // judging criteria (editable in the briefing)
+  progressiveArgs?: string[]; // advanced args allowed in progressive mode
+  argMode?: 'traditional' | 'progressive'; // chosen in the briefing
   drill?: boolean;      // skill drill instead of a full round
   brief?: string;       // drill: system-prompt brief
   kickoff?: string;     // drill: message that starts it
@@ -68,6 +71,7 @@ export const FORMATS: Format[] = [
     blurb: 'One-on-one values debate. Framework, contentions, and clash over a resolution of principle.',
     speeches: ['1AC — 6 min', 'Cross-ex — 3 min', '1NC — 7 min', 'Cross-ex — 3 min', '1AR — 4 min', 'NR — 6 min', '2AR — 3 min'],
     cls: 'impromptu',
+    progressiveArgs: ['Kritiks', 'counterplans', 'theory'],
   },
   {
     id: 'pf',
@@ -76,6 +80,7 @@ export const FORMATS: Format[] = [
     blurb: 'Two-on-two on a current-events resolution, argued for a lay judge.',
     speeches: ['Constructive — 4 min each', 'Crossfire — 3 min', 'Rebuttal — 4 min each', 'Crossfire — 3 min', 'Summary — 3 min each', 'Grand Crossfire — 3 min', 'Final Focus — 2 min each'],
     cls: 'prep',
+    progressiveArgs: ['Kritiks', 'theory'],
   },
   {
     id: 'policy',
@@ -84,6 +89,7 @@ export const FORMATS: Format[] = [
     blurb: 'Two-on-two, evidence-intensive debate over a policy resolution.',
     speeches: ['Constructive — 8 min', 'Cross-ex — 3 min', 'Rebuttal — 5 min', 'Prep time — 8 min'],
     cls: 'impromptu',
+    progressiveArgs: ['Kritiks', 'counterplans', 'theory'],
   },
   {
     id: 'bp',
@@ -115,6 +121,13 @@ export const OTHER: Format = {
 export function findFormat(id?: string): Format | undefined {
   if (id === 'other') return OTHER;
   return FORMATS.find((f) => f.id === id);
+}
+
+// "a" | "a and b" | "a, b, and c"
+export function joinArgs(arr: string[]): string {
+  if (arr.length <= 1) return arr[0] || '';
+  if (arr.length === 2) return `${arr[0]} and ${arr[1]}`;
+  return `${arr.slice(0, -1).join(', ')}, and ${arr[arr.length - 1]}`;
 }
 
 // Judging criteria for a format (same three axes as the score rubric for now).
