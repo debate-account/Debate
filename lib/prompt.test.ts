@@ -26,4 +26,18 @@ describe('formatBrief', () => {
     expect(out).toContain('ROUND SETUP');
     expect(out).toContain('1st Prop — 5 min');
   });
+  it("blocks the format's advanced args in traditional mode", () => {
+    const out = formatBrief({ id: 'ld', name: 'Lincoln–Douglas', speeches: ['1AC — 6 min'], progressiveArgs: ['Kritiks', 'counterplans', 'theory'], argMode: 'traditional' });
+    expect(out).toMatch(/TRADITIONAL/);
+    expect(out).toMatch(/do NOT run Kritiks, counterplans, and theory/);
+  });
+  it('permits them in progressive mode, per the format list', () => {
+    const out = formatBrief({ id: 'pf', name: 'Public Forum', speeches: ['Constructive — 4 min each'], progressiveArgs: ['Kritiks', 'theory'], argMode: 'progressive' });
+    expect(out).toMatch(/PROGRESSIVE/);
+    expect(out).toContain('Kritiks and theory are permitted');
+  });
+  it('adds no argument-style line when the format has no progressive args', () => {
+    const out = formatBrief({ id: 'worlds', name: 'World Schools', speeches: ['Substantive — 8 min'], argMode: 'traditional' });
+    expect(out).not.toMatch(/Argument style/);
+  });
 });

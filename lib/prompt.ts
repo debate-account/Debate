@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { joinArgs } from './formats';
 
 // System prompt = your debate instructions + any case docs / sample rounds in /knowledge.
 // Mirrors the "project knowledge" mechanic from the Claude Project.
@@ -25,7 +26,7 @@ export function systemPrompt(): string {
 // When a non-NYDL format is chosen, tell the model to run the round by that
 // format's rules and speech times. NYDL / ESU is the style the base
 // instructions already assume, so it needs no brief.
-export function formatBrief(format?: { id?: string; name?: string; desc?: string; speeches?: string[]; criteria?: string[]; drill?: boolean; brief?: string }): string {
+export function formatBrief(format?: { id?: string; name?: string; desc?: string; speeches?: string[]; criteria?: string[]; drill?: boolean; brief?: string; argMode?: string; progressiveArgs?: string[] }): string {
   if (!format) return '';
   if (format.drill && format.brief) return '\n\n# DRILL MODE\n' + format.brief;
   const isNydl = !format.id || format.id === 'nydl';
@@ -41,6 +42,12 @@ export function formatBrief(format?: { id?: string; name?: string; desc?: string
   }
   if (format.criteria && format.criteria.length) {
     parts.push('Judge the round on these criteria:\n- ' + format.criteria.join('\n- '));
+  }
+  const advanced = format.progressiveArgs && format.progressiveArgs.length ? joinArgs(format.progressiveArgs) : '';
+  if (advanced && format.argMode === 'traditional') {
+    parts.push(`Argument style — TRADITIONAL: do NOT run ${advanced}. Keep every argument on the substance of the motion.`);
+  } else if (advanced && format.argMode === 'progressive') {
+    parts.push(`Argument style — PROGRESSIVE: ${advanced} are permitted and expected at this level.`);
   }
   // Nothing substantive beyond the header → no brief.
   if (parts.length === 1) return '';

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { findFormat, roundLabel, parseSpeechTimers, criteriaFor, DEFAULT_CRITERIA } from './formats';
+import { findFormat, roundLabel, parseSpeechTimers, criteriaFor, joinArgs, DEFAULT_CRITERIA } from './formats';
 
 describe('findFormat', () => {
   it('finds known formats and "other"', () => {
@@ -47,5 +47,28 @@ describe('NYDL integrity', () => {
     const nydl = findFormat('nydl')!;
     expect(nydl.modes?.map((m) => m.id)).toEqual(['prepared', 'impromptu']);
     expect(parseSpeechTimers(nydl.speeches).length).toBeGreaterThan(0);
+  });
+});
+
+describe('progressiveArgs', () => {
+  it('Policy and LD allow Ks, counterplans, and theory', () => {
+    expect(findFormat('ld')?.progressiveArgs).toEqual(['Kritiks', 'counterplans', 'theory']);
+    expect(findFormat('policy')?.progressiveArgs).toEqual(['Kritiks', 'counterplans', 'theory']);
+  });
+  it('PF allows Ks and theory but not counterplans', () => {
+    expect(findFormat('pf')?.progressiveArgs).toEqual(['Kritiks', 'theory']);
+  });
+  it('parliamentary/traditional formats have none', () => {
+    expect(findFormat('nydl')?.progressiveArgs).toBeUndefined();
+    expect(findFormat('worlds')?.progressiveArgs).toBeUndefined();
+    expect(findFormat('bp')?.progressiveArgs).toBeUndefined();
+  });
+});
+
+describe('joinArgs', () => {
+  it('formats lists naturally', () => {
+    expect(joinArgs(['a'])).toBe('a');
+    expect(joinArgs(['a', 'b'])).toBe('a and b');
+    expect(joinArgs(['a', 'b', 'c'])).toBe('a, b, and c');
   });
 });

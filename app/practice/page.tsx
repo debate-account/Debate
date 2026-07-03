@@ -32,6 +32,7 @@ export default async function Practice({
     desc: id === 'other' ? searchParams.desc : undefined,
     speeches: def?.speeches || [],
     criteria: criteriaFor(id),
+    progressiveArgs: def?.progressiveArgs,
   };
   return <Chat format={format} isGuest={!user} />;
 }

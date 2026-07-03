@@ -151,6 +151,8 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01e
 .brief-block textarea{width:100%;font:inherit;font-size:14px;line-height:1.55;padding:10px 12px;border:1px solid var(--line);
   border-radius:12px;background:var(--field);color:var(--ink);resize:vertical}
 .brief-block textarea:focus{outline:none;border-color:var(--violet);background:var(--field-focus)}
+.brief-note{font-size:12px;color:var(--muted);margin:6px 0 0;line-height:1.5}
+.brief-warn{font-size:12px;color:var(--prep);font-weight:500;margin:6px 0 0;line-height:1.5}
 .replay{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--surface);color:var(--muted);
   border-radius:999px;padding:6px 12px;cursor:pointer}
 
