@@ -16,4 +16,5 @@ export const BUTTON_REF: RefItem[] = [
   { term: 'Link Turn (T)', def: 'Your opponent has cause and effect backwards — their action leads to the exact opposite of what they want.' },
   { term: 'Impact Turn (T)', def: "Concede the opponent's action will occur, but argue the outcome is actually bad (or vice-versa)." },
   { term: 'Outweighs (O)', def: "Concede the opponent's argument might be true, but your side's impacts matter more (e.g. bigger scale, faster timeline)." },
+  { term: 'No Link (N)', def: "There is no logical connection between the opponent's action and their claimed impact — their cause simply doesn't produce their effect." },
 ];

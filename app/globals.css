@@ -42,6 +42,7 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01e
 .btn-primary{background:var(--violet);border-color:var(--violet);color:#fff}
 .btn-primary:hover{background:var(--violet-600);border-color:var(--violet-600)}
 .btn-ghost{background:transparent;border-color:transparent}
+.mobile-only{display:none}
 
 .center{min-height:100dvh;display:grid;place-items:center;padding:24px}
 
@@ -202,6 +203,31 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01e
 .guide-body dl{margin:0}
 .guide-body dt{font-weight:600;font-size:14px;color:var(--ink);margin-top:10px}
 .guide-body dd{margin:2px 0 0;font-size:13px;color:var(--muted);line-height:1.5}
+
+/* mobile pass */
+@media(max-width:600px){
+  .wrap,.wrap-wide{padding:26px 16px}
+  .h-hero{font-size:29px}
+  .drills-head{font-size:22px}
+  .topbar{flex-wrap:wrap;gap:8px;padding:10px 14px}
+  .brand{font-size:16px}
+  .topbar .btn{padding:7px 11px;font-size:13px}
+  .modebar{padding:10px 14px 4px}
+  .thread{padding:10px 14px 16px}
+  .msg{max-width:92%}
+  .composer{padding:12px 14px calc(12px + env(safe-area-inset-bottom))}
+  .composer textarea{min-height:92px}
+  .voicebar{padding:10px 14px}
+  .timer select{max-width:130px}
+  .empty.briefing{max-width:100%}
+  .settings-fab{right:14px;bottom:14px}
+  /* on chat/drill screens the composer/voice bar own the bottom, so drop the
+     floating gear and open settings from the topbar button instead */
+  .portal ~ .settings-fab{display:none}
+  .mobile-only{display:inline-flex}
+  .settings-panel{top:64px;right:14px;left:14px;bottom:auto;width:auto;max-width:none}
+  .auth{padding:22px}
+}
 
 /* history list + round detail */
 .history-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}

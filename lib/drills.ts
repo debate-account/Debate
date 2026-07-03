@@ -26,7 +26,8 @@ const REBUTTAL_WAYS =
   'Non-Unique (U — the feared impact will happen regardless of whether their side wins); ' +
   'Link Turn (T — their cause and effect are backwards; their action leads to the exact opposite of what they want); ' +
   'Impact Turn (T — concede the action occurs, but argue the outcome is actually bad, or vice-versa); ' +
-  'Outweighs (O — concede it might be true, but your side\'s impacts matter more, e.g. bigger scale or faster timeline).';
+  'Outweighs (O — concede it might be true, but your side\'s impacts matter more, e.g. bigger scale or faster timeline); ' +
+  'No Link (N — there is no logical connection between their action and their claimed impact; the cause does not produce the effect).';
 
 export const DRILLS: Drill[] = [
   {
