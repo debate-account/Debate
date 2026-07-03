@@ -44,6 +44,18 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01e
 .btn-ghost{background:transparent;border-color:transparent}
 .mobile-only{display:none}
 
+/* ⓘ info dot + popover */
+.infodot-wrap{position:relative;display:inline-flex;align-items:center}
+.composer > .infodot-wrap{align-self:flex-end;margin-bottom:12px}
+.infodot{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:2px}
+.infodot:hover{color:var(--violet)}
+.infopop-scrim{position:fixed;inset:0;z-index:39}
+.infopop{position:absolute;z-index:40;width:250px;max-width:74vw;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:10px 12px;
+  font-size:12.5px;line-height:1.5;color:var(--ink);font-weight:400;text-align:left}
+.infopop.below{top:calc(100% + 8px)} .infopop.above{bottom:calc(100% + 8px)}
+.infopop.left{left:0} .infopop.right{right:0}
+
 .center{min-height:100dvh;display:grid;place-items:center;padding:24px}
 
 .auth{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);
