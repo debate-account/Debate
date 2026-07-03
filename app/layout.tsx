@@ -1,4 +1,5 @@
 import './globals.css';
+import { Analytics } from '@vercel/analytics/next';
 import { SettingsProvider, SettingsButton } from '@/components/Settings';
 
 export const metadata = { title: 'Debate Practice' };
@@ -15,6 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <SettingsButton />
         </SettingsProvider>
+        <Analytics />
       </body>
     </html>
   );
