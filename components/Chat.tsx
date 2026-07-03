@@ -38,6 +38,25 @@ function beep() {
   } catch {}
 }
 
+// Little ⓘ button that reveals a short explanation on tap.
+function InfoDot({ text, placement = 'below', align = 'left' }: { text: string; placement?: 'below' | 'above'; align?: 'left' | 'right' }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="infodot-wrap">
+      <button type="button" className="infodot" aria-label="How this works" title="How this works" onClick={() => setOpen((o) => !o)}>ⓘ</button>
+      {open && (
+        <>
+          <span className="infopop-scrim" onClick={() => setOpen(false)} />
+          <span className={`infopop ${placement} ${align}`} role="tooltip">{text}</span>
+        </>
+      )}
+    </span>
+  );
+}
+
+const VOICE_INFO = 'Voice mode uses your device’s text-to-speech to read the AI’s reply aloud, and speech-to-text to turn your spoken speech into text. The AI only works with the text — it doesn’t actually hear or speak.';
+const MIC_INFO = 'The mic just dictates — your browser turns what you say into text in the box. The AI reads that text; it isn’t listening to your voice.';
+
 export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest: boolean }) {
   const isImpromptu = format.id === 'nydl' && format.mode === 'impromptu';
   const isDrill = !!format.drill;
@@ -288,6 +307,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
           <button className={mode === 'text' ? 'on' : ''} onClick={() => switchMode('text')}>Text</button>
           <button className={mode === 'voice' ? 'on' : ''} onClick={() => switchMode('voice')} disabled={!speechSupported}>Voice</button>
         </div>
+        <InfoDot placement="below" align="left" text={VOICE_INFO} />
         <button className="btn btn-ghost" onClick={() => setGuideOpen(true)}>Guide</button>
         {!isGuest && <button className="btn btn-ghost" onClick={() => router.push('/history')}>History</button>}
         <button className="btn btn-ghost mobile-only" onClick={() => setSettingsOpen(true)}>Settings</button>
@@ -433,6 +453,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
             title="Dictate — speak instead of typing" aria-label="Dictate"
             onClick={() => startListening(false)} disabled={busy}>🎤</button>
         )}
+        {speechSupported && <InfoDot placement="above" align="right" text={MIC_INFO} />}
         <button type="submit" className="btn btn-primary send" disabled={busy}>{busy ? '…' : 'Send'}</button>
       </form>
     </div>
