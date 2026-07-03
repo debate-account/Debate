@@ -9,7 +9,7 @@ describe('reference', () => {
   });
   it('BUTTON lists the five techniques', () => {
     expect(BUTTON_REF.map((r) => r.term)).toEqual([
-      'No Brink (B)', 'Non-Unique (U)', 'Link Turn (T)', 'Impact Turn (T)', 'Outweighs (O)',
+      'No Brink (B)', 'Non-Unique (U)', 'Link Turn (T)', 'Impact Turn (T)', 'Outweighs (O)', 'No Link (N)',
     ]);
   });
   it('every item has a definition', () => {

@@ -49,7 +49,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
   const [guideOpen, setGuideOpen] = useState(false);
   const router = useRouter();
   const supabase = createClient();
-  const { voiceURI, volume, wpm } = useSettings();
+  const { voiceURI, volume, wpm, setOpen: setSettingsOpen } = useSettings();
   const threadRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const recRef = useRef<any>(null);
@@ -287,6 +287,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
         </div>
         <button className="btn btn-ghost" onClick={() => setGuideOpen(true)}>Guide</button>
         {!isGuest && <button className="btn btn-ghost" onClick={() => router.push('/history')}>History</button>}
+        <button className="btn btn-ghost mobile-only" onClick={() => setSettingsOpen(true)}>Settings</button>
         <button className="btn btn-ghost" onClick={() => router.push('/start')}>New round</button>
       </div>
 

@@ -11,6 +11,8 @@ type Settings = {
   setVolume: (v: number) => void;
   wpm: number;                 // speaking pace for the writing time estimate
   setWpm: (v: number) => void;
+  open: boolean;               // panel visibility, shared so any UI can open it
+  setOpen: (v: boolean) => void;
   voices: SpeechSynthesisVoice[];
 };
 
@@ -28,6 +30,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [voiceURI, setVoiceURIState] = useState('');
   const [volume, setVolumeState] = useState(1);
   const [wpm, setWpmState] = useState(180);
+  const [open, setOpen] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   // Hydrate from localStorage once on mount.
@@ -71,7 +74,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <Ctx.Provider value={{ theme, setTheme, voiceURI, setVoiceURI, volume, setVolume, wpm, setWpm, voices }}>
+    <Ctx.Provider value={{ theme, setTheme, voiceURI, setVoiceURI, volume, setVolume, wpm, setWpm, open, setOpen, voices }}>
       {children}
     </Ctx.Provider>
   );
@@ -79,8 +82,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
 // Floating gear button + settings panel, available on every screen.
 export function SettingsButton() {
-  const { theme, setTheme, voiceURI, setVoiceURI, volume, setVolume, wpm, setWpm, voices } = useSettings();
-  const [open, setOpen] = useState(false);
+  const { theme, setTheme, voiceURI, setVoiceURI, volume, setVolume, wpm, setWpm, open, setOpen, voices } = useSettings();
 
   return (
     <>
@@ -88,7 +90,7 @@ export function SettingsButton() {
         className="settings-fab"
         aria-label="Settings"
         title="Settings"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(!open)}
       >
         ⚙
       </button>
