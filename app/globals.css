@@ -190,6 +190,19 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01e
 .seg button.on{background:var(--violet);color:#fff}
 .settings-note{color:var(--muted);font-size:12px;margin:10px 0 0;line-height:1.5}
 
+/* in-round quick guide (weighing + BUTTON refutations) */
+.guide-scrim{position:fixed;inset:0;z-index:50;background:rgba(20,17,33,.45)}
+.guide-modal{position:fixed;z-index:51;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:520px;max-width:calc(100vw - 32px);max-height:82vh;display:flex;flex-direction:column;
+  background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+.guide-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+.guide-head h3{font-size:19px}
+.guide-body{padding:6px 20px 20px;overflow-y:auto}
+.guide-body h4{font-family:Inter;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--violet);margin:16px 0 6px}
+.guide-body dl{margin:0}
+.guide-body dt{font-weight:600;font-size:14px;color:var(--ink);margin-top:10px}
+.guide-body dd{margin:2px 0 0;font-size:13px;color:var(--muted);line-height:1.5}
+
 /* history list + round detail */
 .history-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}
 .history-head .h-hero{margin:6px 0 0}

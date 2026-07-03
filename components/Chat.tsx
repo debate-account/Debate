@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useSettings } from '@/components/Settings';
 import { renderMarkdown, stripMeta, parseRoundMeta } from '@/lib/markdown';
 import { roundLabel, parseSpeechTimers, DEFAULT_SPEECHES, DEFAULT_CRITERIA, type RoundFormat } from '@/lib/formats';
+import { WEIGHING_REF, BUTTON_REF } from '@/lib/reference';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 const MODES = [
@@ -45,6 +46,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<'text' | 'voice'>('text');
   const [listening, setListening] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const router = useRouter();
   const supabase = createClient();
   const { voiceURI, volume, wpm } = useSettings();
@@ -283,9 +285,36 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
           <button className={mode === 'text' ? 'on' : ''} onClick={() => switchMode('text')}>Text</button>
           <button className={mode === 'voice' ? 'on' : ''} onClick={() => switchMode('voice')} disabled={!speechSupported}>Voice</button>
         </div>
+        <button className="btn btn-ghost" onClick={() => setGuideOpen(true)}>Guide</button>
         {!isGuest && <button className="btn btn-ghost" onClick={() => router.push('/history')}>History</button>}
         <button className="btn btn-ghost" onClick={() => router.push('/start')}>New round</button>
       </div>
+
+      {guideOpen && (
+        <>
+          <div className="guide-scrim" onClick={() => setGuideOpen(false)} />
+          <div className="guide-modal" role="dialog" aria-label="Weighing and refutation guide">
+            <div className="guide-head">
+              <h3>Quick guide</h3>
+              <button className="settings-x" aria-label="Close guide" onClick={() => setGuideOpen(false)}>✕</button>
+            </div>
+            <div className="guide-body">
+              <h4>Weighing mechanisms</h4>
+              <dl>
+                {WEIGHING_REF.map((r) => (
+                  <div key={r.term}><dt>{r.term}</dt><dd>{r.def}</dd></div>
+                ))}
+              </dl>
+              <h4>BUTTON refutations</h4>
+              <dl>
+                {BUTTON_REF.map((r) => (
+                  <div key={r.term}><dt>{r.term}</dt><dd>{r.def}</dd></div>
+                ))}
+              </dl>
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="modebar">
         {!isDrill && MODES.map((m) => (

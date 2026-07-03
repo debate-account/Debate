@@ -33,16 +33,16 @@ export const DRILLS: Drill[] = [
     id: 'weighing',
     name: 'Weighing',
     tag: 'Compare impacts',
-    blurb: 'Get a motion and two competing impacts, then weigh them. The coach scores how decisively you weigh.',
+    blurb: 'Get assigned a side, a motion, and two competing impacts — then argue why yours matters more.',
     brief:
       'This is a WEIGHING DRILL — not a full debate round. Act as a focused coach.\n' +
-      '1. Present ONE motion and TWO competing arguments or impacts (they can favour opposite sides). Keep each to a sentence or two.\n' +
-      '2. Ask the debater to weigh them — which matters more and why.\n' +
+      '1. Choose a motion and ASSIGN the debater a side (Proposition or Opposition). Give TWO competing impacts: ONE that supports the debater\'s assigned side and ONE from the opposing side. State clearly which impact is theirs and which is the opponent\'s. Keep each to a sentence or two.\n' +
+      '2. Ask the debater to weigh — to argue that THEIR side\'s impact matters more than the opponent\'s — using weighing mechanisms.\n' +
       `3. When they respond, evaluate their weighing against these mechanisms: ${WEIGHING_MECHANISMS} ` +
       'Name which mechanisms they used well, which they missed, and give ONE concrete way to weigh more decisively (e.g. comparative language, a clear metric).\n' +
-      '4. Score the weighing out of 10, then offer another rep with a fresh scenario.\n' +
+      '4. Score the weighing out of 10, then offer another rep with a fresh scenario (vary the assigned side).\n' +
       'Keep it tight and practical. Do NOT deliver full speeches or play an opponent.',
-    kickoff: 'Start a weighing drill. Give me a motion and two competing arguments to weigh, then wait for my weighing.',
+    kickoff: 'Start a weighing drill. Assign me a side, give me a motion with my impact and the opposing impact, then wait for my weighing.',
   },
   {
     id: 'rebuttal',
