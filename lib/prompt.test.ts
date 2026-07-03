@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatBrief } from './prompt';
+import { formatBrief, systemPrompt } from './prompt';
 
 describe('formatBrief', () => {
   it('is empty for undefined or a bare NYDL round', () => {
@@ -39,5 +39,14 @@ describe('formatBrief', () => {
   it('adds no argument-style line when the format has no progressive args', () => {
     const out = formatBrief({ id: 'worlds', name: 'World Schools', speeches: ['Substantive — 8 min'], argMode: 'traditional' });
     expect(out).not.toMatch(/Argument style/);
+  });
+});
+
+describe('systemPrompt', () => {
+  it('carries the non-negotiable behaviour rules', () => {
+    const s = systemPrompt();
+    expect(s).toMatch(/there is no perfect response/i); // no false perfection
+    expect(s).toMatch(/speech order/i);                 // hold the order
+    expect(s).toMatch(/ad hominem/i);                   // no personal attacks
   });
 });
