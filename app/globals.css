@@ -88,13 +88,14 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01e
   padding:24px 24px 22px;cursor:pointer;box-shadow:var(--shadow);transition:.15s;position:relative;overflow:hidden;font:inherit;color:var(--ink)}
 .choice:hover{transform:translateY(-2px);border-color:#d6cff0}
 .choice .edge{position:absolute;left:0;top:0;bottom:0;width:5px}
-.choice.prep .edge{background:var(--prep)} .choice.impromptu .edge{background:var(--impromptu)}
+/* Round formats are all blue; drills are green (below). */
+.choice.prep .edge, .choice.impromptu .edge{background:var(--impromptu)}
 .choice .tag{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;margin-bottom:12px}
-.choice.prep .tag{background:#fdeee9;color:var(--prep)} .choice.impromptu .tag{background:#eaeeff;color:var(--impromptu)}
+.choice.prep .tag, .choice.impromptu .tag{background:#eaeeff;color:var(--impromptu)}
 .choice h3{font-size:22px;margin-bottom:6px}
 .choice p{color:var(--muted);font-size:14px;margin:0;line-height:1.5}
 .choice .go{margin-top:16px;font-weight:600;font-size:14px}
-.choice.prep .go{color:var(--prep)} .choice.impromptu .go{color:var(--impromptu)}
+.choice.prep .go, .choice.impromptu .go{color:var(--impromptu)}
 .choice.drill .edge{background:#0a8f5b}
 .choice.drill .tag{background:var(--field);color:#0a8f5b}
 .choice.drill .go{color:#0a8f5b}
@@ -209,6 +210,8 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01e
 .seg button{flex:1;font:inherit;font-size:13px;border:none;background:transparent;padding:8px 0;cursor:pointer;color:var(--muted)}
 .seg button.on{background:var(--violet);color:#fff}
 .settings-note{color:var(--muted);font-size:12px;margin:10px 0 0;line-height:1.5}
+.settings-account{border-top:1px solid var(--line);padding-top:16px;margin-top:18px;
+  flex-direction:row;align-items:center;justify-content:space-between}
 
 /* in-round quick guide (weighing + BUTTON refutations) */
 .guide-scrim{position:fixed;inset:0;z-index:50;background:rgba(20,17,33,.45)}
@@ -281,3 +284,10 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01e
   border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);
   font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:.15s}
 .choice-del:hover{color:#c0392b;border-color:#e3b7b0}
+.add-card{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;
+  border-style:dashed;border-color:#b8c4f0;background:transparent;box-shadow:none;color:var(--impromptu)}
+.add-card.drill{border-color:#9ed4bf;color:#0a8f5b}
+.add-card:hover{border-color:var(--impromptu)}
+.add-card.drill:hover{border-color:#0a8f5b}
+.add-card .plus{font-size:30px;font-weight:400;line-height:1;color:inherit;margin-bottom:6px}
+.add-card h3{font-size:18px;margin:0;color:inherit}

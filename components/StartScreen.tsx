@@ -1,12 +1,12 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FORMATS, OTHER } from '@/lib/formats';
+import { FORMATS } from '@/lib/formats';
 import { DRILLS } from '@/lib/drills';
 import { createClient } from '@/lib/supabase/client';
 import { MAX_CUSTOM, type CustomFormatRow, type CustomDrillRow } from '@/lib/custom';
 
-type View = 'formats' | 'modes' | 'other' | 'newFormat' | 'newDrill';
+type View = 'formats' | 'modes' | 'newFormat' | 'newDrill';
 
 export default function StartScreen({
   isLoggedIn = false,
@@ -19,7 +19,6 @@ export default function StartScreen({
 }) {
   const router = useRouter();
   const [view, setView] = useState<View>('formats');
-  const [custom, setCustom] = useState('');
 
   // Custom-format form
   const [fName, setFName] = useState('');
@@ -39,7 +38,6 @@ export default function StartScreen({
 
   function pick(id: string) {
     if (id === 'nydl') { setView('modes'); return; }
-    if (id === 'other') { setView('other'); return; } // 'other' view gates guests itself
     router.push(`/practice?format=${id}`);
   }
 
@@ -100,38 +98,6 @@ export default function StartScreen({
             </button>
           ))}
         </div>
-      </div>
-    );
-  }
-
-  // Custom format (one-off, not saved). Logged-in only — keeps guests from using
-  // custom rounds to stretch the free trial.
-  if (view === 'other') {
-    if (!isLoggedIn) {
-      return (
-        <div className="wrap">
-          <button className="btn btn-ghost" onClick={() => setView('formats')}>&larr; Formats</button>
-          <div className="eyebrow" style={{ marginTop: 14 }}>Custom format</div>
-          <h1 className="h-hero">Custom formats need an account</h1>
-          <p className="lead">Sign in (it’s free) to build and run your own formats. The free trial covers the standard formats and drills.</p>
-          <button className="btn btn-primary" onClick={() => router.push('/login')}>Sign in →</button>
-        </div>
-      );
-    }
-    return (
-      <div className="wrap">
-        <button className="btn btn-ghost" onClick={() => setView('formats')}>&larr; Formats</button>
-        <div className="eyebrow" style={{ marginTop: 14 }}>Custom format</div>
-        <h1 className="h-hero">Describe your format</h1>
-        <p className="lead">Name the format and its speech times or rules — your opponent and judge will run the round that way.</p>
-        <textarea className="field" style={{ minHeight: 130, resize: 'vertical' }} value={custom}
-          onChange={(e) => setCustom(e.target.value)}
-          placeholder="e.g. Karl Popper — 6-min constructives, 3-min cross-ex, 5-min rebuttals, teams of 3…" />
-        <button className="btn btn-primary" disabled={!custom.trim()} style={{ marginTop: 4 }}
-          onClick={() => router.push(`/practice?format=other&desc=${encodeURIComponent(custom.trim())}`)}>
-          Start round &rarr;
-        </button>
-        {isLoggedIn && <p className="lead" style={{ marginTop: 14, fontSize: 14 }}>Want to reuse a format? Save it under <strong>Your custom formats &amp; drills</strong> on the previous screen.</p>}
       </div>
     );
   }
@@ -199,7 +165,7 @@ export default function StartScreen({
       <h1 className="h-hero">Pick a debate format</h1>
       <p className="lead">Each runs with its own structure, speech times, and judging.</p>
       <div className="fmt-grid">
-        {[...FORMATS, OTHER].map((f) => (
+        {FORMATS.map((f) => (
           <button key={f.id} className={`choice ${f.cls}`} onClick={() => pick(f.id)}>
             <span className="edge" />
             <span className="tag">{f.tag}</span>
@@ -208,9 +174,28 @@ export default function StartScreen({
             <ul className="speeches">
               {f.speeches.map((s, i) => <li key={i}>{s}</li>)}
             </ul>
-            <div className="go">{f.id === 'nydl' ? 'Choose round →' : f.id === 'other' ? 'Describe →' : 'Start →'}</div>
+            <div className="go">{f.id === 'nydl' ? 'Choose round →' : 'Start →'}</div>
           </button>
         ))}
+        {/* Logged-in: saved custom formats + a create card, right in the formats grid. */}
+        {isLoggedIn && customFormats.map((f) => (
+          <div key={f.id} className="choice prep custom-card" onClick={() => router.push(`/practice?customFormat=${f.id}`)} role="button" tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/practice?customFormat=${f.id}`); }}>
+            <button className="choice-del" aria-label="Delete format" onClick={(e) => { e.stopPropagation(); del('custom_formats', f.id); }}>✕</button>
+            <span className="edge" />
+            <span className="tag">Custom format</span>
+            <h3>{f.name}</h3>
+            <p>{f.description || 'Your saved round format.'}</p>
+            <div className="go">Start →</div>
+          </div>
+        ))}
+        {isLoggedIn && customFormats.length < MAX_CUSTOM && (
+          <button className="choice add-card" onClick={() => { setErr(''); setView('newFormat'); }}>
+            <span className="plus">+</span>
+            <h3>New custom format</h3>
+            <p>Save a round format you run often.</p>
+          </button>
+        )}
       </div>
 
       <div className="eyebrow" style={{ marginTop: 40 }}>Or drill one skill</div>
@@ -226,48 +211,26 @@ export default function StartScreen({
             <div className="go">Start drill →</div>
           </button>
         ))}
-      </div>
-
-      {isLoggedIn && (
-        <>
-          <div className="eyebrow" style={{ marginTop: 40 }}>Yours</div>
-          <h2 className="drills-head">Custom formats &amp; drills</h2>
-          <p className="lead" style={{ marginBottom: 18 }}>Build your own round format or coaching drill — saved to your account.</p>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
-            <button className="btn btn-primary" disabled={customFormats.length >= MAX_CUSTOM} onClick={() => { setErr(''); setView('newFormat'); }}>+ New format</button>
-            <button className="btn" disabled={customDrills.length >= MAX_CUSTOM} onClick={() => { setErr(''); setView('newDrill'); }}>+ New drill</button>
+        {/* Logged-in: saved custom drills + a create card, right in the drills grid. */}
+        {isLoggedIn && customDrills.map((d) => (
+          <div key={d.id} className="choice drill custom-card" onClick={() => router.push(`/practice?customDrill=${d.id}`)} role="button" tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/practice?customDrill=${d.id}`); }}>
+            <button className="choice-del" aria-label="Delete drill" onClick={(e) => { e.stopPropagation(); del('custom_drills', d.id); }}>✕</button>
+            <span className="edge" />
+            <span className="tag">{d.tag || 'Custom drill'}</span>
+            <h3>{d.name}</h3>
+            <p>{d.blurb || 'Your saved coaching drill.'}</p>
+            <div className="go">Start drill →</div>
           </div>
-
-          {customFormats.length === 0 && customDrills.length === 0 ? (
-            <p className="lead" style={{ fontSize: 14, opacity: 0.75 }}>Nothing saved yet. Create a format or a drill and it shows up here.</p>
-          ) : (
-            <div className="fmt-grid">
-              {customFormats.map((f) => (
-                <div key={f.id} className="choice prep custom-card" onClick={() => router.push(`/practice?customFormat=${f.id}`)} role="button" tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/practice?customFormat=${f.id}`); }}>
-                  <button className="choice-del" aria-label="Delete format" onClick={(e) => { e.stopPropagation(); del('custom_formats', f.id); }}>✕</button>
-                  <span className="edge" />
-                  <span className="tag">Custom format</span>
-                  <h3>{f.name}</h3>
-                  <p>{f.description || 'Your saved round format.'}</p>
-                  <div className="go">Start →</div>
-                </div>
-              ))}
-              {customDrills.map((d) => (
-                <div key={d.id} className="choice drill custom-card" onClick={() => router.push(`/practice?customDrill=${d.id}`)} role="button" tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/practice?customDrill=${d.id}`); }}>
-                  <button className="choice-del" aria-label="Delete drill" onClick={(e) => { e.stopPropagation(); del('custom_drills', d.id); }}>✕</button>
-                  <span className="edge" />
-                  <span className="tag">{d.tag || 'Custom drill'}</span>
-                  <h3>{d.name}</h3>
-                  <p>{d.blurb || 'Your saved coaching drill.'}</p>
-                  <div className="go">Start drill →</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
+        ))}
+        {isLoggedIn && customDrills.length < MAX_CUSTOM && (
+          <button className="choice drill add-card" onClick={() => { setErr(''); setView('newDrill'); }}>
+            <span className="plus">+</span>
+            <h3>New custom drill</h3>
+            <p>Save a coaching drill of your own.</p>
+          </button>
+        )}
+      </div>
     </div>
   );
 }
