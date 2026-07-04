@@ -303,13 +303,13 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
     if (format.id === 'nydl') {
       send(isImpromptu
         ? 'IMPROMPTU'
-        : "Let's run a prepared round. Ask me your setup questions — the motion, my side, and team size — then wait for me to begin.");
+        : "Let's run a prepared round. Ask me your setup questions — the motion, my side, team size, and whether I want AI teammates for any of my speeches — then wait for me to begin.");
       return;
     }
     const times = speechesArr.length ? ` Speech structure: ${speechesArr.join('; ')}.` : '';
     const crit = criteriaArr.length ? ` Judge on: ${criteriaArr.join('; ')}.` : '';
     const custom = format.desc ? ` Format details: ${format.desc}.` : '';
-    send(`Let's run a ${format.name} round.${custom}${times}${crit} Set it up — give me the motion and my side, briefly explain the structure, then begin as my opponent.`);
+    send(`Let's run a ${format.name} round.${custom}${times}${crit} Set it up — give me the motion and my side, ask whether I want AI teammates for any of my own speeches (if it's a team format), briefly explain the structure, then begin as my opponent.`);
   }
 
   async function saveRound() {

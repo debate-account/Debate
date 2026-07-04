@@ -49,4 +49,9 @@ describe('systemPrompt', () => {
     expect(s).toMatch(/speech order/i);                 // hold the order
     expect(s).toMatch(/ad hominem/i);                   // no personal attacks
   });
+  it('explains AI teammates', () => {
+    const s = systemPrompt();
+    expect(s).toMatch(/TEAMMATES/);                     // the teammate section
+    expect(s).toMatch(/my teammate|teammates' speeches/i);
+  });
 });
