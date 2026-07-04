@@ -59,6 +59,18 @@ export function formatBrief(format?: { id?: string; name?: string; desc?: string
   return parts.join('\n');
 }
 
+// Appended for logged-OUT (free-trial) users only. Keeps the trial bounded so it
+// can't be stretched into unlimited free usage by inflating the round.
+export function guestTrialDirective(): string {
+  return `
+
+# FREE TRIAL (this user is NOT logged in)
+This user is on a free trial. Keep the round to its standard shape:
+- Use the format's standard speech times, number of speeches, and team sizes. The user CANNOT change these. If they ask to lengthen speeches, add speeches, increase team size, or otherwise inflate the round, politely decline — say that customizing the round structure needs a free account — and run the standard structure.
+- Keep each speech to its normal length; do not produce unusually long speeches on request.
+- They may still switch sides or change the motion — only the length and number controls are locked.`;
+}
+
 // Machine-readable metadata the app parses out of replies for history + progress
 // tracking. These lines are stripped before display (see lib/markdown.ts), so
 // keep them on their own line, exactly in the formats below.

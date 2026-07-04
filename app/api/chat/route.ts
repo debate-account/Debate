@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { systemPrompt, formatBrief } from '@/lib/prompt';
+import { systemPrompt, formatBrief, guestTrialDirective } from '@/lib/prompt';
 import { createClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs'; // needs fs for the prompt
@@ -49,10 +49,14 @@ export async function POST(req: Request) {
 
   const { messages, format } = await req.json();
 
+  // Guest status is decided server-side (from the auth cookie), so a client can't
+  // spoof it to escape the trial's structure lock.
+  const isGuest = !user;
+
   const stream = anthropic.messages.stream({
     model: 'claude-sonnet-4-6',
     max_tokens: 3000,
-    system: systemPrompt() + formatBrief(format),
+    system: systemPrompt() + formatBrief(format) + (isGuest ? guestTrialDirective() : ''),
     messages,
   });
 

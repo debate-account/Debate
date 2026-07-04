@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import Chat from '@/components/Chat';
 import { findFormat, criteriaFor, DEFAULT_SPEECHES, DEFAULT_CRITERIA, type RoundFormat } from '@/lib/formats';
@@ -62,7 +63,12 @@ export default async function Practice({
     return <Chat format={format} isGuest={!user} />;
   }
 
-  // No login gate: guests can run an unsaved trial round. Saving is gated in Chat.
+  // Custom formats are logged-in only — block guests from reaching one directly
+  // by URL (?format=other), which would let them stretch the trial.
+  if (searchParams.format === 'other' && !user) redirect('/login');
+
+  // No login gate on the standard formats: guests can run an unsaved trial round.
+  // Saving is gated in Chat.
   const def = findFormat(searchParams.format);
   const id = def?.id || 'nydl';
   const format: RoundFormat = {
