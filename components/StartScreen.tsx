@@ -1,12 +1,12 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FORMATS, OTHER } from '@/lib/formats';
+import { FORMATS } from '@/lib/formats';
 import { DRILLS } from '@/lib/drills';
 import { createClient } from '@/lib/supabase/client';
 import { MAX_CUSTOM, type CustomFormatRow, type CustomDrillRow } from '@/lib/custom';
 
-type View = 'formats' | 'modes' | 'other' | 'newFormat' | 'newDrill';
+type View = 'formats' | 'modes' | 'newFormat' | 'newDrill';
 
 export default function StartScreen({
   isLoggedIn = false,
@@ -19,7 +19,6 @@ export default function StartScreen({
 }) {
   const router = useRouter();
   const [view, setView] = useState<View>('formats');
-  const [custom, setCustom] = useState('');
 
   // Custom-format form
   const [fName, setFName] = useState('');
@@ -39,7 +38,6 @@ export default function StartScreen({
 
   function pick(id: string) {
     if (id === 'nydl') { setView('modes'); return; }
-    if (id === 'other') { setView('other'); return; } // 'other' view gates guests itself
     router.push(`/practice?format=${id}`);
   }
 
@@ -100,38 +98,6 @@ export default function StartScreen({
             </button>
           ))}
         </div>
-      </div>
-    );
-  }
-
-  // Custom format (one-off, not saved). Logged-in only — keeps guests from using
-  // custom rounds to stretch the free trial.
-  if (view === 'other') {
-    if (!isLoggedIn) {
-      return (
-        <div className="wrap">
-          <button className="btn btn-ghost" onClick={() => setView('formats')}>&larr; Formats</button>
-          <div className="eyebrow" style={{ marginTop: 14 }}>Custom format</div>
-          <h1 className="h-hero">Custom formats need an account</h1>
-          <p className="lead">Sign in (it’s free) to build and run your own formats. The free trial covers the standard formats and drills.</p>
-          <button className="btn btn-primary" onClick={() => router.push('/login')}>Sign in →</button>
-        </div>
-      );
-    }
-    return (
-      <div className="wrap">
-        <button className="btn btn-ghost" onClick={() => setView('formats')}>&larr; Formats</button>
-        <div className="eyebrow" style={{ marginTop: 14 }}>Custom format</div>
-        <h1 className="h-hero">Describe your format</h1>
-        <p className="lead">Name the format and its speech times or rules — your opponent and judge will run the round that way.</p>
-        <textarea className="field" style={{ minHeight: 130, resize: 'vertical' }} value={custom}
-          onChange={(e) => setCustom(e.target.value)}
-          placeholder="e.g. Karl Popper — 6-min constructives, 3-min cross-ex, 5-min rebuttals, teams of 3…" />
-        <button className="btn btn-primary" disabled={!custom.trim()} style={{ marginTop: 4 }}
-          onClick={() => router.push(`/practice?format=other&desc=${encodeURIComponent(custom.trim())}`)}>
-          Start round &rarr;
-        </button>
-        {isLoggedIn && <p className="lead" style={{ marginTop: 14, fontSize: 14 }}>Want to reuse a format? Save it under <strong>Your custom formats &amp; drills</strong> on the previous screen.</p>}
       </div>
     );
   }
@@ -199,7 +165,7 @@ export default function StartScreen({
       <h1 className="h-hero">Pick a debate format</h1>
       <p className="lead">Each runs with its own structure, speech times, and judging.</p>
       <div className="fmt-grid">
-        {[...FORMATS, OTHER].map((f) => (
+        {FORMATS.map((f) => (
           <button key={f.id} className={`choice ${f.cls}`} onClick={() => pick(f.id)}>
             <span className="edge" />
             <span className="tag">{f.tag}</span>
@@ -208,7 +174,7 @@ export default function StartScreen({
             <ul className="speeches">
               {f.speeches.map((s, i) => <li key={i}>{s}</li>)}
             </ul>
-            <div className="go">{f.id === 'nydl' ? 'Choose round →' : f.id === 'other' ? 'Describe →' : 'Start →'}</div>
+            <div className="go">{f.id === 'nydl' ? 'Choose round →' : 'Start →'}</div>
           </button>
         ))}
         {/* Logged-in: saved custom formats + a create card, right in the formats grid. */}
