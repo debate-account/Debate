@@ -211,6 +211,25 @@ export default function StartScreen({
             <div className="go">{f.id === 'nydl' ? 'Choose round →' : f.id === 'other' ? 'Describe →' : 'Start →'}</div>
           </button>
         ))}
+        {/* Logged-in: saved custom formats + a create card, right in the formats grid. */}
+        {isLoggedIn && customFormats.map((f) => (
+          <div key={f.id} className="choice prep custom-card" onClick={() => router.push(`/practice?customFormat=${f.id}`)} role="button" tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/practice?customFormat=${f.id}`); }}>
+            <button className="choice-del" aria-label="Delete format" onClick={(e) => { e.stopPropagation(); del('custom_formats', f.id); }}>✕</button>
+            <span className="edge" />
+            <span className="tag">Custom format</span>
+            <h3>{f.name}</h3>
+            <p>{f.description || 'Your saved round format.'}</p>
+            <div className="go">Start →</div>
+          </div>
+        ))}
+        {isLoggedIn && customFormats.length < MAX_CUSTOM && (
+          <button className="choice add-card" onClick={() => { setErr(''); setView('newFormat'); }}>
+            <span className="plus">+</span>
+            <h3>New custom format</h3>
+            <p>Save a round format you run often.</p>
+          </button>
+        )}
       </div>
 
       <div className="eyebrow" style={{ marginTop: 40 }}>Or drill one skill</div>
@@ -226,48 +245,26 @@ export default function StartScreen({
             <div className="go">Start drill →</div>
           </button>
         ))}
-      </div>
-
-      {isLoggedIn && (
-        <>
-          <div className="eyebrow" style={{ marginTop: 40 }}>Yours</div>
-          <h2 className="drills-head">Custom formats &amp; drills</h2>
-          <p className="lead" style={{ marginBottom: 18 }}>Build your own round format or coaching drill — saved to your account.</p>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
-            <button className="btn btn-primary" disabled={customFormats.length >= MAX_CUSTOM} onClick={() => { setErr(''); setView('newFormat'); }}>+ New format</button>
-            <button className="btn" disabled={customDrills.length >= MAX_CUSTOM} onClick={() => { setErr(''); setView('newDrill'); }}>+ New drill</button>
+        {/* Logged-in: saved custom drills + a create card, right in the drills grid. */}
+        {isLoggedIn && customDrills.map((d) => (
+          <div key={d.id} className="choice drill custom-card" onClick={() => router.push(`/practice?customDrill=${d.id}`)} role="button" tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/practice?customDrill=${d.id}`); }}>
+            <button className="choice-del" aria-label="Delete drill" onClick={(e) => { e.stopPropagation(); del('custom_drills', d.id); }}>✕</button>
+            <span className="edge" />
+            <span className="tag">{d.tag || 'Custom drill'}</span>
+            <h3>{d.name}</h3>
+            <p>{d.blurb || 'Your saved coaching drill.'}</p>
+            <div className="go">Start drill →</div>
           </div>
-
-          {customFormats.length === 0 && customDrills.length === 0 ? (
-            <p className="lead" style={{ fontSize: 14, opacity: 0.75 }}>Nothing saved yet. Create a format or a drill and it shows up here.</p>
-          ) : (
-            <div className="fmt-grid">
-              {customFormats.map((f) => (
-                <div key={f.id} className="choice prep custom-card" onClick={() => router.push(`/practice?customFormat=${f.id}`)} role="button" tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/practice?customFormat=${f.id}`); }}>
-                  <button className="choice-del" aria-label="Delete format" onClick={(e) => { e.stopPropagation(); del('custom_formats', f.id); }}>✕</button>
-                  <span className="edge" />
-                  <span className="tag">Custom format</span>
-                  <h3>{f.name}</h3>
-                  <p>{f.description || 'Your saved round format.'}</p>
-                  <div className="go">Start →</div>
-                </div>
-              ))}
-              {customDrills.map((d) => (
-                <div key={d.id} className="choice drill custom-card" onClick={() => router.push(`/practice?customDrill=${d.id}`)} role="button" tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/practice?customDrill=${d.id}`); }}>
-                  <button className="choice-del" aria-label="Delete drill" onClick={(e) => { e.stopPropagation(); del('custom_drills', d.id); }}>✕</button>
-                  <span className="edge" />
-                  <span className="tag">{d.tag || 'Custom drill'}</span>
-                  <h3>{d.name}</h3>
-                  <p>{d.blurb || 'Your saved coaching drill.'}</p>
-                  <div className="go">Start drill →</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
+        ))}
+        {isLoggedIn && customDrills.length < MAX_CUSTOM && (
+          <button className="choice drill add-card" onClick={() => { setErr(''); setView('newDrill'); }}>
+            <span className="plus">+</span>
+            <h3>New custom drill</h3>
+            <p>Save a coaching drill of your own.</p>
+          </button>
+        )}
+      </div>
     </div>
   );
 }
