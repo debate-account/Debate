@@ -210,6 +210,8 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01e
 .seg button{flex:1;font:inherit;font-size:13px;border:none;background:transparent;padding:8px 0;cursor:pointer;color:var(--muted)}
 .seg button.on{background:var(--violet);color:#fff}
 .settings-note{color:var(--muted);font-size:12px;margin:10px 0 0;line-height:1.5}
+.settings-account{border-top:1px solid var(--line);padding-top:16px;margin-top:18px;
+  flex-direction:row;align-items:center;justify-content:space-between}
 
 /* in-round quick guide (weighing + BUTTON refutations) */
 .guide-scrim{position:fixed;inset:0;z-index:50;background:rgba(20,17,33,.45)}

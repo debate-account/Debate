@@ -1,5 +1,6 @@
 'use client';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 type Theme = 'light' | 'dark';
 type Settings = {
@@ -83,6 +84,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 // Floating gear button + settings panel, available on every screen.
 export function SettingsButton() {
   const { theme, setTheme, voiceURI, setVoiceURI, volume, setVolume, wpm, setWpm, open, setOpen, voices } = useSettings();
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data }) => setLoggedIn(!!data.user)).catch(() => {});
+  }, []);
+
+  async function logout() {
+    try { await createClient().auth.signOut(); } catch {}
+    window.location.assign('/login'); // full reload so server components drop the session
+  }
 
   return (
     <>
@@ -140,6 +151,13 @@ export function SettingsButton() {
 
             {voices.length === 0 && (
               <p className="settings-note">No speech voices detected in this browser — voice mode audio may be unavailable.</p>
+            )}
+
+            {loggedIn && (
+              <div className="settings-row settings-account">
+                <span>Account</span>
+                <button className="btn btn-ghost" onClick={logout}>Log out</button>
+              </div>
             )}
           </div>
         </>
