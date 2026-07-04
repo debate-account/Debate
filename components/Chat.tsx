@@ -68,6 +68,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
   const [guideOpen, setGuideOpen] = useState(false);
   const [trialLimited, setTrialLimited] = useState(false);
   const [drillsUsed, setDrillsUsed] = useState(0); // guest drill sessions (localStorage)
+  const [roundsUsed, setRoundsUsed] = useState(0); // guest full-round sessions (localStorage)
   const router = useRouter();
   const supabase = createClient();
   const { voiceURI, volume, wpm, setOpen: setSettingsOpen } = useSettings();
@@ -103,10 +104,16 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
   useEffect(() => {
     setSpeechSupported(('SpeechRecognition' in window) || ('webkitSpeechRecognition' in window));
     setTtsSupported('speechSynthesis' in window);
-    if (isGuest) { try { setDrillsUsed(Number(localStorage.getItem('dp.drillsUsed') || '0')); } catch {} }
+    if (isGuest) {
+      try {
+        setDrillsUsed(Number(localStorage.getItem('dp.drillsUsed') || '0'));
+        setRoundsUsed(Number(localStorage.getItem('dp.roundsUsed') || '0'));
+      } catch {}
+    }
   }, [isGuest]);
 
   const drillBlocked = isDrill && isGuest && drillsUsed >= 3;
+  const roundBlocked = !isDrill && isGuest && roundsUsed >= 1;
 
   const words = useMemo(() => (input.trim() ? input.trim().split(/\s+/).length : 0), [input]);
   const speakSecs = wpm > 0 ? Math.round((words / wpm) * 60) : 0;
@@ -287,6 +294,12 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
       send(format.kickoff || 'Start the drill.');
       return;
     }
+    if (isGuest) {
+      if (roundsUsed >= 1) return;
+      const n = roundsUsed + 1;
+      setRoundsUsed(n);
+      try { localStorage.setItem('dp.roundsUsed', String(n)); } catch {}
+    }
     if (format.id === 'nydl') {
       send(isImpromptu
         ? 'IMPROMPTU'
@@ -300,11 +313,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
   }
 
   async function saveRound() {
-    if (isGuest) {
-      alert('Log in to save rounds. Your trial round is not stored.');
-      router.push('/login');
-      return;
-    }
+    if (isGuest) return; // Save is disabled for guests; the trial banner handles the sign-in prompt
     const { motion, side, scores } = parseRoundMeta(messages);
     const { error } = await supabase.from('rounds').insert({ transcript: messages, format: roundLabel(format), motion, side, scores });
     alert(error ? 'Save failed: ' + error.message : 'Round saved.');
@@ -324,7 +333,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
         <button className="btn btn-ghost" onClick={() => setGuideOpen(true)}>Guide</button>
         {!isGuest && <button className="btn btn-ghost" onClick={() => router.push('/history')}>History</button>}
         <button className="btn btn-ghost mobile-only" onClick={() => setSettingsOpen(true)}>Settings</button>
-        <button className="btn btn-ghost" onClick={() => router.push('/start')}>New round</button>
+        <button className="btn btn-ghost" onClick={() => router.push('/start')}>Formats &amp; drills</button>
       </div>
 
       {guideOpen && (
@@ -357,7 +366,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
         {!isDrill && MODES.map((m) => (
           <button key={m.key} className={`mode ${m.cls}`} onClick={() => send(m.key)} disabled={busy}>{m.label}</button>
         ))}
-        <button className="mode" onClick={saveRound} disabled={busy || messages.length === 0} style={{ marginLeft: 'auto' }}>{isDrill ? 'Save drill' : 'Save round'}</button>
+        <button className="mode" onClick={saveRound} disabled={busy || messages.length === 0 || isGuest} title={isGuest ? 'Sign in to save rounds — the trial isn\'t stored' : undefined} style={{ marginLeft: 'auto' }}>{isDrill ? 'Save drill' : 'Save round'}</button>
       </div>
 
       <div className="thread" ref={threadRef}>
@@ -367,6 +376,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
               <h2>That&rsquo;s your 3 free drills</h2>
               <p>Sign in to keep drilling — it&rsquo;s free, and your work saves too.</p>
               <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => router.push('/login')}>Sign in</button>
+              <button className="btn btn-ghost" style={{ marginTop: 8 }} onClick={() => router.push('/start')}>← Formats &amp; drills</button>
             </div>
           ) : (
             <div className="empty">
@@ -375,6 +385,13 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
               <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={startRound} disabled={busy}>Start drill</button>
             </div>
           )
+        ) : messages.length === 0 && roundBlocked ? (
+          <div className="empty">
+            <h2>That&rsquo;s your free trial round</h2>
+            <p>Sign in to keep practicing — it&rsquo;s free, and your rounds save too.</p>
+            <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => router.push('/login')}>Sign in</button>
+            <button className="btn btn-ghost" style={{ marginTop: 8 }} onClick={() => router.push('/start')}>← Formats &amp; drills</button>
+          </div>
         ) : messages.length === 0 ? (
           <div className="empty briefing">
             <h2>{isImpromptu ? 'Impromptu round' : `${format.name} round`}</h2>
@@ -464,7 +481,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
           <textarea ref={taRef} value={input}
             onChange={(e) => { setInput(e.target.value); autosize(); }}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(input); } }}
-            placeholder="Write your speech here…  (⌘/Ctrl + Enter to send)" disabled={busy || drillBlocked} />
+            placeholder="Write your speech here…  (⌘/Ctrl + Enter to send)" disabled={busy || drillBlocked || roundBlocked} />
           {words > 0 && (
             <span className="wordcount">{words} {words === 1 ? 'word' : 'words'} · ~{fmtClock(speakSecs)} at {wpm} wpm</span>
           )}
@@ -475,7 +492,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
             onClick={() => startListening(false)} disabled={busy}>🎤</button>
         )}
         {speechSupported && <InfoDot placement="above" align="right" text={MIC_INFO} />}
-        <button type="submit" className="btn btn-primary send" disabled={busy || drillBlocked}>{busy ? '…' : 'Send'}</button>
+        <button type="submit" className="btn btn-primary send" disabled={busy || drillBlocked || roundBlocked}>{busy ? '…' : 'Send'}</button>
       </form>
     </div>
   );
