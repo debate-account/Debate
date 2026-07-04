@@ -273,3 +273,11 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01e
 .score-val span{font-size:14px;color:var(--muted);font-family:Inter,sans-serif}
 .score-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
 .transcript{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+
+/* Custom formats & drills */
+.fld-label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:16px 0 6px}
+.custom-card{display:block}
+.choice-del{position:absolute;top:10px;right:10px;z-index:2;width:26px;height:26px;line-height:1;
+  border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);
+  font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:.15s}
+.choice-del:hover{color:#c0392b;border-color:#e3b7b0}
