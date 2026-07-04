@@ -80,6 +80,10 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
   const finalRef = useRef('');            // accumulated finalized transcript this session
   const autoSendRef = useRef(false);      // voice mode sends the speech on stop
   const startedRef = useRef(false);       // recognition actually started (vs. denied up front)
+  const roundIdRef = useRef<string | null>(null); // DB row id for this round — autosave upserts into it
+  const messagesRef = useRef<Msg[]>([]);          // live transcript handle for the exit-time autosave
+  const lastAutoSigRef = useRef('');              // dedupes verdict autosaves
+  const savingRef = useRef<Promise<void> | null>(null); // serializes saves so two can't both insert
 
   // Round briefing — editable speech times + judging criteria, confirmed before start.
   const hasTimes = format.speeches.some((s) => /\d+\s*min/i.test(s));
@@ -121,6 +125,28 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
   useEffect(() => {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
+
+  // Keep a live handle on the transcript for the exit-time autosave below.
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  // Autosave (logged-in) when a judge verdict lands — the round is done enough to keep.
+  useEffect(() => {
+    if (isGuest || busy) return;
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== 'assistant' || !/(^|\n)SCORES:\s*\{/.test(last.content)) return;
+    const sig = 'v' + messages.length;
+    if (lastAutoSigRef.current === sig) return; // don't re-save the same verdict
+    lastAutoSigRef.current = sig;
+    void persist(messages);
+  }, [busy, messages, isGuest]);
+
+  // Autosave (logged-in) on the way out — leaving for another page, or closing the tab.
+  useEffect(() => {
+    const onHide = () => { void persist(messagesRef.current); };
+    window.addEventListener('pagehide', onHide);
+    return () => { window.removeEventListener('pagehide', onHide); void persist(messagesRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load the selected speech's time onto the clock when idle (or when its time is edited).
   useEffect(() => {
@@ -312,11 +338,40 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
     send(`Let's run a ${format.name} round.${custom}${times}${crit} Set it up — give me the motion and my side, ask whether I want AI teammates for any of my own speeches (if it's a team format), briefly explain the structure, then begin as my opponent.`);
   }
 
+  // Upsert this round into a single row, so autosave (verdict / exit) and the
+  // manual Save button all update the same record instead of piling up duplicates.
+  async function persist(msgs: Msg[], force = false): Promise<{ ok: boolean; error?: string }> {
+    if (isGuest) return { ok: false };
+    if (msgs.length === 0) return { ok: false };
+    // On autosave, skip near-empty rounds (just the setup exchange); manual save forces.
+    if (!force && msgs.filter((m) => m.role === 'user').length < 2) return { ok: false };
+    // Wait for any in-flight save so the first call sets roundIdRef before the next runs.
+    while (savingRef.current) { try { await savingRef.current; } catch {} }
+    let done: () => void = () => {};
+    savingRef.current = new Promise<void>((r) => { done = r; });
+    try {
+      const { motion, side, scores } = parseRoundMeta(msgs);
+      const payload = { transcript: msgs, format: roundLabel(format), motion, side, scores };
+      if (roundIdRef.current) {
+        const { error } = await supabase.from('rounds').update(payload).eq('id', roundIdRef.current);
+        return error ? { ok: false, error: error.message } : { ok: true };
+      }
+      const { data, error } = await supabase.from('rounds').insert(payload).select('id').single();
+      if (error) return { ok: false, error: error.message };
+      if (data) roundIdRef.current = data.id as string;
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'save failed' };
+    } finally {
+      done();
+      savingRef.current = null;
+    }
+  }
+
   async function saveRound() {
     if (isGuest) return; // Save is disabled for guests; the trial banner handles the sign-in prompt
-    const { motion, side, scores } = parseRoundMeta(messages);
-    const { error } = await supabase.from('rounds').insert({ transcript: messages, format: roundLabel(format), motion, side, scores });
-    alert(error ? 'Save failed: ' + error.message : 'Round saved.');
+    const res = await persist(messages, true);
+    alert(res.ok ? 'Round saved.' : 'Save failed: ' + (res.error || 'nothing to save yet'));
   }
 
   return (
