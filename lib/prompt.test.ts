@@ -49,6 +49,11 @@ describe('systemPrompt', () => {
     expect(s).toMatch(/speech order/i);                 // hold the order
     expect(s).toMatch(/ad hominem/i);                   // no personal attacks
   });
+  it('tells the model to vary motions, not default to stock ones', () => {
+    const s = systemPrompt();
+    expect(s).toMatch(/voting mandatory\/compulsory/i); // the specific one to avoid
+    expect(s).toMatch(/rotate topic areas/i);           // variety guidance
+  });
   it('explains AI teammates', () => {
     const s = systemPrompt();
     expect(s).toMatch(/TEAMMATES/);                     // the teammate section
