@@ -59,6 +59,16 @@ export function formatBrief(format?: { id?: string; name?: string; desc?: string
   return parts.join('\n');
 }
 
+// The motions this user has already been given (from saved rounds + this device).
+// Injected so a generated motion is never a repeat. Capped to keep the prompt lean.
+export function avoidMotionsDirective(motions?: string[]): string {
+  const list = Array.from(new Set((motions || []).map((m) => (m || '').trim()).filter(Boolean))).slice(-60);
+  if (!list.length) return '';
+  return '\n\n# MOTIONS ALREADY USED — NEVER REPEAT\n' +
+    'The debater has already had the motions below in earlier rounds. When YOU generate a motion, do NOT use any of them or a close paraphrase — pick a clearly different topic AND wording. (If the debater explicitly names one of these as their own motion, honor it; this only restricts motions you generate.)\n- ' +
+    list.join('\n- ');
+}
+
 // Appended for logged-OUT (free-trial) users only. Keeps the trial bounded so it
 // can't be stretched into unlimited free usage by inflating the round.
 export function guestTrialDirective(): string {

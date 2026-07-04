@@ -69,6 +69,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
   const [trialLimited, setTrialLimited] = useState(false);
   const [drillsUsed, setDrillsUsed] = useState(0); // guest drill sessions (localStorage)
   const [roundsUsed, setRoundsUsed] = useState(0); // guest full-round sessions (localStorage)
+  const [seenMotions, setSeenMotions] = useState<string[]>([]); // motions this user has already had — never repeat
   const router = useRouter();
   const supabase = createClient();
   const { voiceURI, volume, wpm, setOpen: setSettingsOpen } = useSettings();
@@ -128,6 +129,34 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
 
   // Keep a live handle on the transcript for the exit-time autosave below.
   useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  // Load the motions this user has already had, so a generated one never repeats:
+  // this device's history (localStorage) plus, when logged in, their saved rounds.
+  useEffect(() => {
+    let local: string[] = [];
+    try { local = JSON.parse(localStorage.getItem('dp.seenMotions') || '[]'); } catch {}
+    if (isGuest) { setSeenMotions(local); return; }
+    let cancelled = false;
+    supabase.from('rounds').select('motion').then(({ data }) => {
+      if (cancelled) return;
+      const fromDb = (data || []).map((r: any) => r.motion).filter((m: any): m is string => !!m);
+      setSeenMotions(Array.from(new Set([...local, ...fromDb])));
+    });
+    return () => { cancelled = true; };
+  }, [isGuest]);
+
+  // Record this round's motion the moment it's settled, so later rounds (even on
+  // this device, before the round is saved) avoid it too.
+  useEffect(() => {
+    const { motion } = parseRoundMeta(messages);
+    if (!motion) return;
+    setSeenMotions((prev) => {
+      if (prev.includes(motion)) return prev;
+      const nextList = [...prev, motion];
+      try { localStorage.setItem('dp.seenMotions', JSON.stringify(nextList.slice(-200))); } catch {}
+      return nextList;
+    });
+  }, [messages]);
 
   // Autosave (logged-in) when a judge verdict lands — the round is done enough to keep.
   useEffect(() => {
@@ -207,7 +236,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next, format: { ...format, speeches: speechesArr, criteria: criteriaArr, argMode: format.progressiveArgs?.length ? argMode : undefined } }),
+        body: JSON.stringify({ messages: next, format: { ...format, speeches: speechesArr, criteria: criteriaArr, argMode: format.progressiveArgs?.length ? argMode : undefined }, avoidMotions: seenMotions }),
       });
       if (!res.ok || !res.body) {
         if (res.status === 429) {

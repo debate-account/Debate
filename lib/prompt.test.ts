@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatBrief, systemPrompt } from './prompt';
+import { formatBrief, systemPrompt, avoidMotionsDirective } from './prompt';
 
 describe('formatBrief', () => {
   it('is empty for undefined or a bare NYDL round', () => {
@@ -39,6 +39,21 @@ describe('formatBrief', () => {
   it('adds no argument-style line when the format has no progressive args', () => {
     const out = formatBrief({ id: 'worlds', name: 'World Schools', speeches: ['Substantive — 8 min'], argMode: 'traditional' });
     expect(out).not.toMatch(/Argument style/);
+  });
+});
+
+describe('avoidMotionsDirective', () => {
+  it('is empty with no motions', () => {
+    expect(avoidMotionsDirective(undefined)).toBe('');
+    expect(avoidMotionsDirective([])).toBe('');
+    expect(avoidMotionsDirective(['', '  '])).toBe('');
+  });
+  it('lists prior motions to never repeat, de-duped', () => {
+    const out = avoidMotionsDirective(['THW ban zoos', 'THW ban zoos', 'THW make voting mandatory']);
+    expect(out).toMatch(/NEVER REPEAT/);
+    expect(out).toContain('THW ban zoos');
+    expect(out).toContain('THW make voting mandatory');
+    expect(out.match(/THW ban zoos/g)!.length).toBe(1); // de-duped
   });
 });
 
