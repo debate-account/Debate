@@ -39,7 +39,7 @@ export default function StartScreen({
 
   function pick(id: string) {
     if (id === 'nydl') { setView('modes'); return; }
-    if (id === 'other') { setView('other'); return; }
+    if (id === 'other') { setView('other'); return; } // 'other' view gates guests itself
     router.push(`/practice?format=${id}`);
   }
 
@@ -104,8 +104,20 @@ export default function StartScreen({
     );
   }
 
-  // Custom format (one-off, not saved).
+  // Custom format (one-off, not saved). Logged-in only — keeps guests from using
+  // custom rounds to stretch the free trial.
   if (view === 'other') {
+    if (!isLoggedIn) {
+      return (
+        <div className="wrap">
+          <button className="btn btn-ghost" onClick={() => setView('formats')}>&larr; Formats</button>
+          <div className="eyebrow" style={{ marginTop: 14 }}>Custom format</div>
+          <h1 className="h-hero">Custom formats need an account</h1>
+          <p className="lead">Sign in (it’s free) to build and run your own formats. The free trial covers the standard formats and drills.</p>
+          <button className="btn btn-primary" onClick={() => router.push('/login')}>Sign in →</button>
+        </div>
+      );
+    }
     return (
       <div className="wrap">
         <button className="btn btn-ghost" onClick={() => setView('formats')}>&larr; Formats</button>

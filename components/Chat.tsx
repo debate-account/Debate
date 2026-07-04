@@ -395,16 +395,16 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
         ) : messages.length === 0 ? (
           <div className="empty briefing">
             <h2>{isImpromptu ? 'Impromptu round' : `${format.name} round`}</h2>
-            <p>Here&rsquo;s how this round runs — change anything before you start.</p>
+            <p>{isGuest ? 'Here’s how this round runs. Speech times and structure are fixed on the free trial — sign in to customize them.' : 'Here’s how this round runs — change anything before you start.'}</p>
             <div className="brief">
               <div className="brief-block">
-                <label>Speech times <span>· the timer counts these down</span></label>
-                <textarea value={speechesText} onChange={(e) => setSpeechesText(e.target.value)}
+                <label>Speech times <span>· {isGuest ? 'fixed for the trial' : 'the timer counts these down'}</span></label>
+                <textarea value={speechesText} onChange={(e) => setSpeechesText(e.target.value)} readOnly={isGuest}
                   rows={Math.min(8, speechesArr.length + 1)} spellCheck={false} />
               </div>
               <div className="brief-block">
-                <label>Judging criteria <span>· the judge scores these</span></label>
-                <textarea value={criteriaText} onChange={(e) => setCriteriaText(e.target.value)}
+                <label>Judging criteria <span>· {isGuest ? 'fixed for the trial' : 'the judge scores these'}</span></label>
+                <textarea value={criteriaText} onChange={(e) => setCriteriaText(e.target.value)} readOnly={isGuest}
                   rows={Math.min(6, criteriaArr.length + 1)} spellCheck={false} />
               </div>
               {format.progressiveArgs && format.progressiveArgs.length > 0 && (
