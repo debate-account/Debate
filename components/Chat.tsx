@@ -113,7 +113,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
   }, [isGuest]);
 
   const drillBlocked = isDrill && isGuest && drillsUsed >= 3;
-  const roundBlocked = !isDrill && isGuest && roundsUsed >= 3;
+  const roundBlocked = !isDrill && isGuest && roundsUsed >= 1;
 
   const words = useMemo(() => (input.trim() ? input.trim().split(/\s+/).length : 0), [input]);
   const speakSecs = wpm > 0 ? Math.round((words / wpm) * 60) : 0;
@@ -295,7 +295,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
       return;
     }
     if (isGuest) {
-      if (roundsUsed >= 3) return;
+      if (roundsUsed >= 1) return;
       const n = roundsUsed + 1;
       setRoundsUsed(n);
       try { localStorage.setItem('dp.roundsUsed', String(n)); } catch {}
@@ -387,7 +387,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
           )
         ) : messages.length === 0 && roundBlocked ? (
           <div className="empty">
-            <h2>That&rsquo;s your 3 free rounds</h2>
+            <h2>That&rsquo;s your free trial round</h2>
             <p>Sign in to keep practicing — it&rsquo;s free, and your rounds save too.</p>
             <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => router.push('/login')}>Sign in</button>
             <button className="btn btn-ghost" style={{ marginTop: 8 }} onClick={() => router.push('/start')}>← Formats &amp; drills</button>
