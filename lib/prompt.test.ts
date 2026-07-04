@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatBrief, systemPrompt } from './prompt';
+import { formatBrief, systemPrompt, avoidMotionsDirective } from './prompt';
 
 describe('formatBrief', () => {
   it('is empty for undefined or a bare NYDL round', () => {
@@ -42,12 +42,32 @@ describe('formatBrief', () => {
   });
 });
 
+describe('avoidMotionsDirective', () => {
+  it('is empty with no motions', () => {
+    expect(avoidMotionsDirective(undefined)).toBe('');
+    expect(avoidMotionsDirective([])).toBe('');
+    expect(avoidMotionsDirective(['', '  '])).toBe('');
+  });
+  it('lists prior motions to never repeat, de-duped', () => {
+    const out = avoidMotionsDirective(['THW ban zoos', 'THW ban zoos', 'THW make voting mandatory']);
+    expect(out).toMatch(/NEVER REPEAT/);
+    expect(out).toContain('THW ban zoos');
+    expect(out).toContain('THW make voting mandatory');
+    expect(out.match(/THW ban zoos/g)!.length).toBe(1); // de-duped
+  });
+});
+
 describe('systemPrompt', () => {
   it('carries the non-negotiable behaviour rules', () => {
     const s = systemPrompt();
     expect(s).toMatch(/there is no perfect response/i); // no false perfection
     expect(s).toMatch(/speech order/i);                 // hold the order
     expect(s).toMatch(/ad hominem/i);                   // no personal attacks
+  });
+  it('tells the model to vary motions, not default to stock ones', () => {
+    const s = systemPrompt();
+    expect(s).toMatch(/voting mandatory\/compulsory/i); // the specific one to avoid
+    expect(s).toMatch(/rotate topic areas/i);           // variety guidance
   });
   it('explains AI teammates', () => {
     const s = systemPrompt();
