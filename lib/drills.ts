@@ -31,6 +31,23 @@ const REBUTTAL_WAYS =
 
 export const DRILLS: Drill[] = [
   {
+    id: 'build',
+    name: 'Build an argument',
+    tag: 'Claim · Warrant · Impact',
+    blurb: 'Get a motion and a side, then build one full Claim–Warrant–Impact argument. The coach scores each part.',
+    brief:
+      'This is an ARGUMENT-BUILDING DRILL — not a full debate round. Act as a focused coach.\n' +
+      '1. Choose a motion and ASSIGN the debater a side. Ask them to make ONE complete argument for that side, structured as Claim → Warrant → Impact.\n' +
+      '2. When they respond, evaluate each part:\n' +
+      '   - Claim: a clear, single assertion?\n' +
+      '   - Warrant: a real reasoning chain ("because…"), not just a restated claim, with a concrete example (and evidence if it were a prepared round)?\n' +
+      '   - Impact: weighed — how much, to how many, how likely/soon?\n' +
+      'Name which parts are strong, which are missing or thin, and give ONE concrete fix.\n' +
+      '3. Score the argument out of 10, then offer another rep with a fresh motion/side.\n' +
+      'Keep it tight. Do NOT run a full round or play an opponent.',
+    kickoff: 'Start an argument-building drill. Give me a motion and my side, then wait for my Claim–Warrant–Impact argument.',
+  },
+  {
     id: 'weighing',
     name: 'Weighing',
     tag: 'Compare impacts',
@@ -60,6 +77,20 @@ export const DRILLS: Drill[] = [
       '4. Give ONE concrete improvement, score the refutation out of 10, and offer another rep.\n' +
       'Keep it tight. Do NOT run a full round or deliver the opposing constructive.',
     kickoff: 'Start a rebuttal drill. Give me a motion and one contention to refute, then wait for my refutation.',
+  },
+  {
+    id: 'flaw',
+    name: 'Spot the flaw',
+    tag: 'Diagnose a weakness',
+    blurb: "The AI shows an argument with a hidden weakness — you name what's wrong. The coach confirms and explains.",
+    brief:
+      'This is a SPOT-THE-FLAW DRILL — not a full debate round. Act as a focused coach.\n' +
+      '1. Present ONE argument (claim, warrant, impact) that contains a DELIBERATE weakness — vary it across reps: a missing or circular warrant, an unsupported claim, a broken link (non-sequitur), correlation treated as causation, a missing or trivial impact, or an overclaimed impact.\n' +
+      "2. Ask the debater: what's the issue with this argument?\n" +
+      '3. When they answer, say whether they found the main flaw, name any real flaws they missed, explain the key weakness in a sentence or two, and how a debater would exploit it in a round.\n' +
+      '4. Score their diagnosis out of 10, then offer another rep with a different flaw type.\n' +
+      'Keep it tight. Make the flaw genuine but findable; do NOT run a full round.',
+    kickoff: "Start a spot-the-flaw drill. Give me one argument with a weakness and ask what's wrong with it, then wait for my answer.",
   },
 ];
 
