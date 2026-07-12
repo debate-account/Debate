@@ -87,7 +87,13 @@ export function SettingsButton() {
   const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
-    createClient().auth.getUser().then(({ data }) => setLoggedIn(!!data.user)).catch(() => {});
+    const supabase = createClient();
+    // Read the stored session synchronously (no network round-trip) so the Log
+    // out control shows right away, and subscribe so it stays correct across
+    // sign-in / sign-out without needing a page refresh.
+    supabase.auth.getSession().then(({ data }) => setLoggedIn(!!data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => setLoggedIn(!!session));
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   async function logout() {
