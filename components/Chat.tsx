@@ -60,6 +60,8 @@ const MIC_INFO = 'The mic just dictates — your browser turns what you say into
 export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest: boolean }) {
   const isImpromptu = format.id === 'nydl' && format.mode === 'impromptu';
   const isDrill = !!format.drill;
+  // Where a guest's in-progress round/drill is stashed so a refresh restores it.
+  const trialKey = `dp.trial.${format.drill ? 'drill.' + format.id : 'round.' + format.id + '.' + (format.mode || '')}`;
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -129,6 +131,24 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
 
   // Keep a live handle on the transcript for the exit-time autosave below.
   useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  // Guests aren't saved to the DB, so stash their in-progress round in
+  // localStorage and restore it on refresh — a reload shouldn't lose the round
+  // (or count as a fresh one). Logged-in users are covered by DB autosave.
+  useEffect(() => {
+    if (!isGuest) return;
+    try {
+      const raw = localStorage.getItem(trialKey);
+      const saved = raw ? JSON.parse(raw) : null;
+      if (Array.isArray(saved) && saved.length) setMessages(saved);
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isGuest, trialKey]);
+
+  useEffect(() => {
+    if (!isGuest || messages.length === 0) return;
+    try { localStorage.setItem(trialKey, JSON.stringify(messages)); } catch {}
+  }, [isGuest, trialKey, messages]);
 
   // Load the motions this user has already had, so a generated one never repeats:
   // this device's history (localStorage) plus, when logged in, their saved rounds.
@@ -565,7 +585,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
           <textarea ref={taRef} value={input}
             onChange={(e) => { setInput(e.target.value); autosize(); }}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(input); } }}
-            placeholder="Write your speech here…  (⌘/Ctrl + Enter to send)" disabled={busy || drillBlocked || roundBlocked} />
+            placeholder="Write your speech here…  (⌘/Ctrl + Enter to send)" disabled={busy || trialLimited} />
           {words > 0 && (
             <span className="wordcount">{words} {words === 1 ? 'word' : 'words'} · ~{fmtClock(speakSecs)} at {wpm} wpm</span>
           )}
@@ -576,7 +596,7 @@ export default function Chat({ format, isGuest }: { format: RoundFormat; isGuest
             onClick={() => startListening(false)} disabled={busy}>🎤</button>
         )}
         {speechSupported && <InfoDot placement="above" align="right" text={MIC_INFO} />}
-        <button type="submit" className="btn btn-primary send" disabled={busy || drillBlocked || roundBlocked}>{busy ? '…' : 'Send'}</button>
+        <button type="submit" className="btn btn-primary send" disabled={busy || trialLimited}>{busy ? '…' : 'Send'}</button>
       </form>
     </div>
   );
